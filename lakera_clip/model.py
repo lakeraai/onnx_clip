@@ -1,14 +1,18 @@
-import os
 import errno
-import onnxruntime as ort
-from PIL import Image
-import numpy as np
+import os
 
-class model():
+import numpy as np
+import onnxruntime as ort
+
+
+class model:
     def __init__(self):
         self.model = self._load_model()
 
     def _load_model(self):
+        """
+        Grabs the ONNX model.
+        """
         MODEL_ONNX_EXPORT_PATH = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data/clip_model.onnx"
         )
@@ -19,11 +23,17 @@ class model():
                 errno.ENOENT, os.strerror(errno.ENOENT), MODEL_ONNX_EXPORT_PATH
             )
 
-    def _assert_pil(self, image):
-        if not isinstance(image, Image.Image):
-            raise AssertionError(f"Expected PIL Image but instead got {image.type}")
-
     def run(self, image, text):
+        """
+        Calculates the logits given an already-preprocessed image and already-tokenized text.
+
+        Args:
+            image: the preprocessed image
+            text: the tokenized text
+
+        Returns:
+            (logits_per_image, logits_per_text) tuple.
+        """
         logits_per_image, logits_per_text = self.model.run(
             None, {"IMAGE": image, "TEXT": text}
         )

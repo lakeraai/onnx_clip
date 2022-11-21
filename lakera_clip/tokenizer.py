@@ -7,6 +7,7 @@ import ftfy
 import numpy as np
 import regex as re
 
+
 def default_bpe():
     """
     Taken from CLIP.
@@ -125,9 +126,7 @@ class Tokenizer(object):
             return token + "</w>"
 
         while True:
-            bigram = min(
-                pairs, key=lambda pair: self.bpe_ranks.get(pair, float("inf"))
-            )
+            bigram = min(pairs, key=lambda pair: self.bpe_ranks.get(pair, float("inf")))
             if bigram not in self.bpe_ranks:
                 break
             first, second = bigram
@@ -142,11 +141,7 @@ class Tokenizer(object):
                     new_word.extend(word[i:])
                     break
 
-                if (
-                    word[i] == first
-                    and i < len(word) - 1
-                    and word[i + 1] == second
-                ):
+                if word[i] == first and i < len(word) - 1 and word[i + 1] == second:
                     new_word.append(first + second)
                     i += 2
                 else:
@@ -166,12 +161,9 @@ class Tokenizer(object):
         bpe_tokens = []
         text = whitespace_clean(basic_clean(text)).lower()
         for token in re.findall(self.pat, text):
-            token = "".join(
-                self.byte_encoder[b] for b in token.encode("utf-8")
-            )
+            token = "".join(self.byte_encoder[b] for b in token.encode("utf-8"))
             bpe_tokens.extend(
-                self.encoder[bpe_token]
-                for bpe_token in self.bpe(token).split(" ")
+                self.encoder[bpe_token] for bpe_token in self.bpe(token).split(" ")
             )
         return bpe_tokens
 
@@ -184,8 +176,7 @@ class Tokenizer(object):
         )
         return text
 
-
-    def tokenize(
+    def encode_text(
         self,
         texts: Union[str, List[str]],
         context_length: int = 77,
@@ -214,9 +205,7 @@ class Tokenizer(object):
 
         sot_token = self.encoder["<|startoftext|>"]
         eot_token = self.encoder["<|endoftext|>"]
-        all_tokens = [
-            [sot_token] + self.encode(text) + [eot_token] for text in texts
-        ]
+        all_tokens = [[sot_token] + self.encode(text) + [eot_token] for text in texts]
         result = np.zeros((len(all_tokens), context_length), dtype=np.int32)
 
         for i, tokens in enumerate(all_tokens):
