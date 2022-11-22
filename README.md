@@ -1,4 +1,11 @@
 # lakera-clip
+## git lfs
+This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `git lfs install` before cloning.
+
+## Installation
+To install, run the following in the root of the repository:
+`pip install -e.`
+
 
 ## Example usage
 
