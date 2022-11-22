@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 
-class preprocess:
+class Preprocess:
     def __init__(self):
         self.CLIP_INPUT_SIZE = 224
         self.CROP_CENTER_PADDING = 224

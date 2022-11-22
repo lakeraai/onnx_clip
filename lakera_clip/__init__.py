@@ -1,5 +1,5 @@
-from .model import model
-from .preprocessor import preprocess
+from .model import Model
+from .preprocessor import Preprocess
 from .tokenizer import Tokenizer
 
-__all__ = ["model", "preprocess", "Tokenizer"]
+__all__ = ["Model", "Preprocess", "Tokenizer"]

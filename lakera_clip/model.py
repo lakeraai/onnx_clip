@@ -5,7 +5,7 @@ import numpy as np
 import onnxruntime as ort
 
 
-class model:
+class Model:
     def __init__(self):
         self.model = self._load_model()
 

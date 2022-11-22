@@ -1,5 +1,5 @@
 import pytest
-from lakera_clip import model, Tokenizer, preprocess
+from lakera_clip import Model, Tokenizer, Preprocess
 from PIL import Image
 import os
 
@@ -23,7 +23,7 @@ def test_bad_image_input():
     onnx_tokenizer = Tokenizer()
     text = onnx_tokenizer.encode_text(text)
 
-    onnx_model = model()
+    onnx_model = Model()
     with pytest.raises(RuntimeError):
         onnx_model.run("bad image input", text)
 
@@ -33,10 +33,10 @@ def test_bad_text_input():
     """
     image, _ = load_image_text()
 
-    onnx_preprocess = preprocess()
+    onnx_preprocess = Preprocess()
     image = onnx_preprocess.encode_image(image)
 
-    onnx_model = model()
+    onnx_model = Model()
     with pytest.raises(RuntimeError):
         onnx_model.run(image, "bad text input")
 
@@ -45,13 +45,13 @@ def test_model_runs():
     Test full process.
     """
     image, text = load_image_text()
-    onnx_preprocess = preprocess()
+    onnx_preprocess = Preprocess()
     image = onnx_preprocess.encode_image(image)
 
     onnx_tokenizer = Tokenizer()
     text = onnx_tokenizer.encode_text(text)
 
-    onnx_model = model()
+    onnx_model = Model()
 
     logits_per_image, logits_per_text = onnx_model.run(image, text)
 
