@@ -1,5 +1,12 @@
 from setuptools import setup, find_packages
 
+base_packages = [
+    "numpy>=0.18.0",
+    "opencv-python-headless>=4.0.1",
+    "onnxruntime>=0.4.0",
+    "pillow>=8.4.0",
+    "ftfy>=6.0.3"
+]
 
 setup(
     name="lakera_clip",
