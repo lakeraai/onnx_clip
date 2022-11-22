@@ -1,7 +1,7 @@
 import gzip
 import html
 import os
-from typing import List, Union
+from typing import List, Union, Dict, Set
 
 import ftfy
 import numpy as np
@@ -24,7 +24,7 @@ def default_bpe():
     )
 
 
-def bytes_to_unicode():
+def bytes_to_unicode() -> Dict[int, str]:
     """
     Taken from CLIP.
     https://github.com/openai/CLIP/blob/main/clip/simple_tokenizer.py#L16
@@ -52,7 +52,7 @@ def bytes_to_unicode():
     return dict(zip(bs, cs))
 
 
-def get_pairs(word):
+def get_pairs(word) -> Set[str]:
     """
     Taken from CLIP.
     https://github.com/openai/CLIP/blob/main/clip/simple_tokenizer.py#L38
@@ -67,7 +67,7 @@ def get_pairs(word):
     return pairs
 
 
-def basic_clean(text):
+def basic_clean(text) -> str:
     """
     Taken from CLIP.
     https://github.com/openai/CLIP/blob/main/clip/simple_tokenizer.py#L50
@@ -77,7 +77,7 @@ def basic_clean(text):
     return text.strip()
 
 
-def whitespace_clean(text):
+def whitespace_clean(text) -> str:
     """
     Taken from CLIP.
     https://github.com/openai/CLIP/blob/main/clip/simple_tokenizer.py#L56
@@ -116,7 +116,7 @@ class Tokenizer(object):
             re.IGNORECASE,
         )
 
-    def bpe(self, token):
+    def bpe(self, token: str) -> str:
         if token in self.cache:
             return self.cache[token]
         word = tuple(token[:-1]) + (token[-1] + "</w>",)
@@ -157,7 +157,7 @@ class Tokenizer(object):
         self.cache[token] = word
         return word
 
-    def encode(self, text):
+    def encode(self, text: str) -> List[int]:
         bpe_tokens = []
         text = whitespace_clean(basic_clean(text)).lower()
         for token in re.findall(self.pat, text):
@@ -167,7 +167,7 @@ class Tokenizer(object):
             )
         return bpe_tokens
 
-    def decode(self, tokens):
+    def decode(self, tokens: List[int]) -> str:
         text = "".join([self.decoder[token] for token in tokens])
         text = (
             bytearray([self.byte_decoder[c] for c in text])
@@ -181,7 +181,7 @@ class Tokenizer(object):
         texts: Union[str, List[str]],
         context_length: int = 77,
         truncate: bool = False,
-    ):
+    ) -> np.array:
         """
         Taken from CLIP and reformatted to replace pytorch zeros with numpy zeros.
         Furthermore, this has been wrapped inside the Tokenizer class instead of being

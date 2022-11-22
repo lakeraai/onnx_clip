@@ -4,6 +4,8 @@ import os
 import numpy as np
 import onnxruntime as ort
 
+from typing import Tuple
+
 
 class Model:
     def __init__(self):
@@ -23,7 +25,7 @@ class Model:
                 errno.ENOENT, os.strerror(errno.ENOENT), MODEL_ONNX_EXPORT_PATH
             )
 
-    def run(self, image, text):
+    def run(self, image: np.array, text: np.array) -> Tuple[np.array, np.array]:
         """
         Calculates the logits given an already-preprocessed image and already-tokenized text.
 
@@ -39,6 +41,6 @@ class Model:
         )
         return logits_per_image, logits_per_text
 
-    def softmax(self, x):
+    def softmax(self, x: np.array) -> np.array:
         """Compute softmax values for each sets of scores in x."""
         return (np.exp(x) / np.sum(np.exp(x), axis=1))[0]

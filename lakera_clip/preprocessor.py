@@ -10,7 +10,7 @@ class Preprocess:
         self.NORM_MEAN = np.array([0.485, 0.456, 0.406]).reshape((1, 1, 3))
         self.NORM_STD = np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3))
 
-    def _smart_resize(self, img):
+    def _smart_resize(self, img: Image.Image) -> np.array:
         """Resizing that preserves the image ratio"""
         # The expected size of the image after we resize it
         # and pad to have a square format
@@ -53,11 +53,11 @@ class Preprocess:
 
         return img
 
-    def _assert_pil(self, img):
+    def _assert_pil(self, img: Image.Image):
         if not isinstance(img, Image.Image):
             raise AssertionError(f"Expected PIL Image but instead got {type(img)}")
 
-    def encode_image(self, img):
+    def encode_image(self, img: Image.Image) -> np.array:
         """
         The function for preprocessing the images in the same style as CLIP's preprocess() function.
         Through experimentation, the best method seems to be a carbon-copy of ConvNextExtractor found in
