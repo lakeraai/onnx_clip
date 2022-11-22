@@ -1,7 +1,7 @@
 import gzip
 import html
 import os
-from typing import List, Union, Dict, Set
+from typing import Dict, List, Set, Union
 
 import ftfy
 import numpy as np
