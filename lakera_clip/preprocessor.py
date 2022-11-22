@@ -4,17 +4,16 @@ from PIL import Image
 
 
 class Preprocess:
-    def __init__(self):
-        self.CLIP_INPUT_SIZE = 224
-        self.CROP_CENTER_PADDING = 224
-        self.NORM_MEAN = np.array([0.485, 0.456, 0.406]).reshape((1, 1, 3))
-        self.NORM_STD = np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3))
+    CLIP_INPUT_SIZE = 224
+    CROP_CENTER_PADDING = 224
+    NORM_MEAN = np.array([0.485, 0.456, 0.406]).reshape((1, 1, 3))
+    NORM_STD = np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3))
 
     def _smart_resize(self, img: Image.Image) -> np.array:
         """Resizing that preserves the image ratio"""
         # The expected size of the image after we resize it
         # and pad to have a square format
-        resized_sq_size = self.CLIP_INPUT_SIZE + 2 * self.CROP_CENTER_PADDING
+        resized_sq_size = Preprocess.CLIP_INPUT_SIZE + 2 * Preprocess.CROP_CENTER_PADDING
         # Current height and width
         img = np.array(img)
         h, w = img.shape[0:2]
@@ -74,8 +73,8 @@ class Preprocess:
         img = self._smart_resize(img)
         # Crop the center
         img = img[
-            self.CROP_CENTER_PADDING : -self.CROP_CENTER_PADDING,
-            self.CROP_CENTER_PADDING : -self.CROP_CENTER_PADDING,
+            Preprocess.CROP_CENTER_PADDING : -Preprocess.CROP_CENTER_PADDING,
+            Preprocess.CROP_CENTER_PADDING : -Preprocess.CROP_CENTER_PADDING,
         ]
 
         # [0; 255] -> [0; 1]
@@ -86,7 +85,7 @@ class Preprocess:
             img = np.expand_dims(img, axis=2)  # NxMx1
             img = np.concatenate((img,) * 3, axis=2)  # NxMx3
         # Normalize
-        img = (img - self.NORM_MEAN) / self.NORM_STD
+        img = (img - Preprocess.NORM_MEAN) / Preprocess.NORM_STD
         # To tensor-friendly format
         img = np.transpose(img, (2, 0, 1))
         img = img.astype(np.float32).reshape(1, 3, 224, 224)
