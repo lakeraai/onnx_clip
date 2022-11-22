@@ -1,5 +1,7 @@
-from lakera_clip import Tokenizer
 import pytest
+
+from lakera_clip import Tokenizer
+
 
 def test_text_too_long():
     text = [str(i) for i in range(100)]
