@@ -9,12 +9,12 @@ base_packages = [
 ]
 
 setup(
-    name="lakera_clip",
-    version="0.1",
+    name="onnx_clip",
+    version="1.0",
     description="Implementation of CLIP without Pytorch",
     author="Daniel Timbrell",
     author_email="dt@lakera.ai",
-    license="Open Source",
+    license="MIT",
     python_requires=">=3.6",
     classifiers=[
         "License :: OSI Approved :: MIT License",
