@@ -7,7 +7,7 @@ from PIL import Image
 from onnx_clip import OnnxClip
 
 
-def load_image_text():
+def load_image_text(convert=True):
     """
     Load a test image and convert to 3-channel RBG instead of 4-channel RGBA.
 
@@ -17,10 +17,16 @@ def load_image_text():
     IMAGE_PATH = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../onnx_clip/data/CLIP.png"
     )
-    return Image.open(IMAGE_PATH).convert("RGB"), [
-        "a photo of a man",
-        "a photo of a woman",
-    ]
+    if convert:
+        return Image.open(IMAGE_PATH).convert("RGB"), [
+            "a photo of a man",
+            "a photo of a woman",
+        ]
+    else:
+        return Image.open(IMAGE_PATH), [
+            "a photo of a man",
+            "a photo of a woman",
+        ]
 
 
 def test_bad_image_input():
@@ -32,6 +38,16 @@ def test_bad_image_input():
     onnx_model = OnnxClip()
     with pytest.raises(TypeError):
         onnx_model.run("bad image input", text)
+
+def test_bad_image_channels():
+    """
+    Test that a 4-channel image raises the appropriate error.
+    """
+    image, text = load_image_text(convert=False)
+
+    onnx_model = OnnxClip()
+    with pytest.raises(AttributeError):
+        onnx_model.run(image, text)
 
 
 def test_bad_text_input():
