@@ -68,9 +68,10 @@ class Preprocessor:
 
     def encode_image(self, img: Image.Image) -> np.array:
         """
-        The function for preprocessing the images in the same style as CLIP's preprocess() function.
-        Through experimentation, the best method seems to be a carbon-copy of ConvNextExtractor found in
-        lakera/internal/embedding_extractor.py
+        The function for preprocessing the images in an approximate way to CLIP's preprocess() function:
+        https://github.com/openai/CLIP/blob/main/clip/clip.py#L79
+        This is the function that causes a (small) deviation from CLIP results, as the interpolation and
+        normalization methodologies are different.
         Args:
             img: PIL image
 
