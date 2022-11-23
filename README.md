@@ -11,18 +11,18 @@ This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `gi
 
 ## Installation
 To install, run the following in the root of the repository:
-`pip install -e.`
+`pip install -e .`
 
 
 ## Example usage
 
 ```python
-from lakera_clip import Model
+from onnx_clip import OnnxClip
 from PIL import Image
 
-image = Image.open("lakera_clip/data/CLIP.png")
+image = Image.open("onnx_clip/data/CLIP.png")
 text = ["a photo of a man", "a photo of a woman"]
-lakera_model = Model()
-logits_per_image, logits_per_text = lakera_model.run(image, text)
+onnx_model = OnnxClip()
+logits_per_image, logits_per_text = onnx_model.run(image, text)
 ```
 
