@@ -27,7 +27,7 @@ from PIL import Image
 image = Image.open("onnx_clip/data/CLIP.png").convert("RGB")
 text = ["a photo of a man", "a photo of a woman"]
 onnx_model = OnnxClip()
-logits_per_image, logits_per_text = onnx_model.run(image, text)
+logits_per_image, logits_per_text = onnx_model.predict(image, text)
 probas = onnx_model.softmax(logits_per_image)
 ```
 

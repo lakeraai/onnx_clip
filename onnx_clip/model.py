@@ -42,7 +42,7 @@ class OnnxClip:
                 errno.ENOENT, os.strerror(errno.ENOENT), MODEL_ONNX_EXPORT_PATH
             )
 
-    def run(
+    def predict(
         self, image: Image.Image, text: Union[str, List[str]]
     ) -> Tuple[np.array, np.array]:
         """
@@ -57,7 +57,7 @@ class OnnxClip:
             image = Image.open("lakera_clip/data/CLIP.png").convert("RGB")
             text = ["a photo of a man", "a photo of a woman"]
             onnx_model = OnnxClip()
-            logits_per_image, logits_per_text = onnx_model.run(image, text)
+            logits_per_image, logits_per_text = onnx_model.predict(image, text)
             probas = lakera_model.softmax(logits_per_image)
             print(logits_per_image, probas)
             [20.380428 19.790262], [0.64340323 0.35659674]
