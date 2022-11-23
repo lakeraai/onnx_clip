@@ -86,3 +86,8 @@ def test_model_runs():
     probas = onnx_model.softmax(logits_per_image)
 
     assert len(probas) == 2
+
+    probs_clip = [0.6846084 , 0.31539157]
+
+    assert abs(probs_clip[0] - probas[0]) <= 5
+    assert abs(probs_clip[1] - probas[1]) <= 5
