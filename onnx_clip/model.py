@@ -6,10 +6,10 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
-from lakera_clip import Preprocess, Tokenizer
+from onnx_clip import Preprocessor, Tokenizer
 
 
-class Model:
+class OnnxClip:
     """
     This class utilises both the Tokenizer and Preprocess classes to encode the text and images alongside the ONNX
     format of the model.
@@ -18,8 +18,8 @@ class Model:
     Example usage:
         image = Image.open("lakera_clip/data/CLIP.png")
         text = ["a photo of a man", "a photo of a woman"]
-        lakera_model = Model()
-        logits_per_image, logits_per_text = lakera_model.run(image, text)
+        onnx_clip = OnnxClip()
+        logits_per_image, logits_per_text = onnx_clip.run(image, text)
         probas = lakera_model.softmax(logits_per_image)
     """
 
@@ -28,8 +28,8 @@ class Model:
         Instantiates the model and required encoding classes.
         """
         self.model = self._load_model()
-        self.tokenizer = Tokenizer()
-        self.preprocess = Preprocess()
+        self._tokenizer = Tokenizer()
+        self._preprocessor = Preprocessor()
 
     def _load_model(self):
         """
@@ -59,16 +59,15 @@ class Model:
         Returns:
             (logits_per_image, logits_per_text) tuple.
         """
-        image = self.preprocess.encode_image(image)
-        text = self.tokenizer.encode_text(text)
+        image = self._preprocessor.encode_image(image)
+        text = self._tokenizer.encode_text(text)
 
         logits_per_image, logits_per_text = self.model.run(
             None, {"IMAGE": image, "TEXT": text}
         )
         return logits_per_image, logits_per_text
 
-    @staticmethod
-    def softmax(x: np.array) -> np.array:
+    def softmax(self, x: np.array) -> np.array:
         """
         Computes softmax values for each sets of scores in x.
         This ensures the output sums to 1.
