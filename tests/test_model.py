@@ -37,7 +37,7 @@ def test_bad_image_input():
 
     onnx_model = OnnxClip()
     with pytest.raises(TypeError):
-        onnx_model.run("bad image input", text)
+        onnx_model.predict("bad image input", text)
 
 def test_bad_image_channels():
     """
@@ -47,7 +47,7 @@ def test_bad_image_channels():
 
     onnx_model = OnnxClip()
     with pytest.raises(AttributeError):
-        onnx_model.run(image, text)
+        onnx_model.predict(image, text)
 
 
 def test_bad_text_input():
@@ -58,7 +58,7 @@ def test_bad_text_input():
 
     onnx_model = OnnxClip()
     with pytest.raises(TypeError):
-        onnx_model.run(image, 123)
+        onnx_model.predict(image, 123)
 
 
 def test_softmax_values():
@@ -78,7 +78,7 @@ def test_model_runs():
 
     onnx_model = OnnxClip()
 
-    logits_per_image, logits_per_text = onnx_model.run(image, text)
+    logits_per_image, logits_per_text = onnx_model.predict(image, text)
 
     assert logits_per_image.shape == (1, 2)
     assert logits_per_text.shape == (2, 1)
@@ -87,7 +87,7 @@ def test_model_runs():
 
     assert len(probas) == 2
 
-    probs_clip = [0.6846084 , 0.31539157]
+    probs_clip = [0.6846084, 0.31539157]
 
     assert abs(probs_clip[0] - probas[0]) <= 5
     assert abs(probs_clip[1] - probas[1]) <= 5
