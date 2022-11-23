@@ -1,6 +1,6 @@
 import pytest
 
-from lakera_clip import Tokenizer
+from onnx_clip import Tokenizer
 
 
 def test_text_too_long():

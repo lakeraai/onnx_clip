@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from lakera_clip import Model
+from onnx_clip import OnnxClip
 
 
 def load_image_text():
@@ -15,7 +15,7 @@ def load_image_text():
         (test_image, test_text)
     """
     IMAGE_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "../lakera_clip/data/CLIP.png"
+        os.path.dirname(os.path.abspath(__file__)), "../onnx_clip/data/CLIP.png"
     )
     return Image.open(IMAGE_PATH).convert("RGB"), [
         "a photo of a man",
@@ -29,8 +29,8 @@ def test_bad_image_input():
     """
     _, text = load_image_text()
 
-    onnx_model = Model()
-    with pytest.raises(AssertionError):
+    onnx_model = OnnxClip()
+    with pytest.raises(TypeError):
         onnx_model.run("bad image input", text)
 
 
@@ -40,7 +40,7 @@ def test_bad_text_input():
     """
     image, _ = load_image_text()
 
-    onnx_model = Model()
+    onnx_model = OnnxClip()
     with pytest.raises(TypeError):
         onnx_model.run(image, 123)
 
@@ -49,7 +49,7 @@ def test_softmax_values():
     """
     Test the softmax function works as expected.
     """
-    onnx_model = Model()
+    onnx_model = OnnxClip()
     logits = np.array([[0, 10, -10]])
     assert sum(onnx_model.softmax(logits)) == 1
 
@@ -60,7 +60,7 @@ def test_model_runs():
     """
     image, text = load_image_text()
 
-    onnx_model = Model()
+    onnx_model = OnnxClip()
 
     logits_per_image, logits_per_text = onnx_model.run(image, text)
 
