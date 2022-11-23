@@ -13,7 +13,7 @@ setup(
     version="0.1",
     description="Implementation of CLIP without Pytorch",
     author="Daniel Timbrell",
-    author_email="dantimbrell@gmail.com",
+    author_email="dt@lakera.ai",
     license="Open Source",
     python_requires=">=3.6",
     classifiers=[
