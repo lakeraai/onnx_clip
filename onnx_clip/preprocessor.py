@@ -7,6 +7,7 @@ class Preprocessor:
     """
     A rough approximation to the CLIP `preprocess` neural net.
     """
+
     # Fixed variables that ensure the correct output shapes and values for the `Model` class.
     CLIP_INPUT_SIZE = 224
     CROP_CENTER_PADDING = 224
@@ -17,19 +18,27 @@ class Preprocessor:
         """Resizing that preserves the image ratio"""
         img = np.array(img)
         if len(img.shape) > 3:
-            raise AttributeError(f"The image should have 2 or 3 dimensions but got {len(img.shape)} dimensions")
+            raise AttributeError(
+                f"The image should have 2 or 3 dimensions but got {len(img.shape)} dimensions"
+            )
         if (len(img.shape) == 3) and img.shape[2] != 3:
-            raise AttributeError(f"Expected 3-channel RGB image but got image with {img.shape[2]} channels")
+            raise AttributeError(
+                f"Expected 3-channel RGB image but got image with {img.shape[2]} channels"
+            )
 
         # The expected size of the image after we resize it
         # and pad to have a square format
-        resized_sq_size = Preprocessor.CLIP_INPUT_SIZE + 2 * Preprocessor.CROP_CENTER_PADDING
+        resized_sq_size = (
+            Preprocessor.CLIP_INPUT_SIZE + 2 * Preprocessor.CROP_CENTER_PADDING
+        )
 
         # Current height and width
         h, w = img.shape[0:2]
 
         if h * w == 0:
-            raise AttributeError(f"Height and width of the image should both be non-zero but got shape {h, w}")
+            raise AttributeError(
+                f"Height and width of the image should both be non-zero but got shape {h, w}"
+            )
 
         # The size of the image after we resize but before we pad
         if h > w:

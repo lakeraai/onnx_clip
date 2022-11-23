@@ -39,6 +39,7 @@ def test_bad_image_input():
     with pytest.raises(TypeError):
         onnx_model.predict("bad image input", text)
 
+
 def test_bad_image_channels():
     """
     Test that a 4-channel image raises the appropriate error.
