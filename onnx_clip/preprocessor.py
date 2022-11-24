@@ -18,11 +18,11 @@ class Preprocessor:
         """Resizing that preserves the image ratio"""
         img = np.array(img)
         if len(img.shape) > 3:
-            raise AttributeError(
+            raise ValueError(
                 f"The image should have 2 or 3 dimensions but got {len(img.shape)} dimensions"
             )
         if (len(img.shape) == 3) and img.shape[2] != 3:
-            raise AttributeError(
+            raise ValueError(
                 f"Expected 3-channel RGB image but got image with {img.shape[2]} channels"
             )
 
@@ -36,7 +36,7 @@ class Preprocessor:
         h, w = img.shape[0:2]
 
         if h * w == 0:
-            raise AttributeError(
+            raise ValueError(
                 f"Height and width of the image should both be non-zero but got shape {h, w}"
             )
 
