@@ -27,13 +27,13 @@ class OnnxClip:
 
     def _load_model(self):
         """
-        Grabs the ONNX model. This is the same model that can be found in CLIP:
+        Grabs the ONNX implementation of CLIP's ViT-B/32 :
         https://github.com/openai/CLIP/blob/main/clip/model.py
 
         We have exported it to ONNX to remove the PyTorch dependencies.
         """
         MODEL_ONNX_EXPORT_PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "data/clip_model.onnx"
+            os.path.dirname(os.path.abspath(__file__)), "data/clip_model_vitb32.onnx"
         )
         if os.path.exists(MODEL_ONNX_EXPORT_PATH):
             return ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
