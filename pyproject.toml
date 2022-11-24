@@ -1,24 +1,13 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "onnx_clip"
 version = "1.0"
 description = "Replicating CLIP without PyTorch dependencies."
 readme = "README.md"
-authors = [
-    { name="Lakera AI", email="dev@lakera.ai" },
-]
-requires-python = ">=3.6"
-dependencies = [
-    "numpy>=0.18.0",
-    "opencv-python-headless>=4.0.1",
-    "onnxruntime>=0.4.0",
-    "pillow>=8.4.0",
-    "ftfy>=6.0.3",
-    "regex"
-]
+authors = ["Lakera AI <dev@lakera.ai>"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -27,3 +16,12 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/lakeraai/onnx_clip"
+
+[tool.poetry.dependencies]
+python = "^3.6.1"
+numpy = "^1.18.0"
+opencv-python-headless = "^4.0.1"
+onnxruntime = "^0.4.0"
+pillow = "^8.4.0"
+ftfy = "^6.0.3"
+regex = "*"
