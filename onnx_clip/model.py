@@ -53,7 +53,7 @@ class OnnxClip:
         self, image: Image.Image, text: Union[str, List[str]]
     ) -> Tuple[np.array, np.array]:
         """
-        Given a batch of PIL images and a batch of text, returns two arrays, containing the logit scores corresponding
+        Given a raw image and a list of text categories, returns two arrays, containing the logit scores corresponding
         to each image and text input.
         The values are cosine similarities between the corresponding image and text features, times 100.
 
@@ -74,13 +74,20 @@ class OnnxClip:
             print(logits_per_image, probas)
             [20.380428 19.790262], [0.64340323 0.35659674]
 
+            print(logits_per_text)
+            [20.380428
+            19.790262]
+
         Args:
             image: the original PIL image. This image must be a 3-channel (RGB) image.
                    Can be any size, as the preprocessing step is done to convert this image to size (224, 224).
             text: the text to tokenize. Each category in the given list cannot be longer than 77 characters.
 
         Returns:
-            (logits_per_image, logits_per_text) tuple.
+            logits_per_image: The scaled dot product scores between the image embeddings and the text embeddings.
+            This represents the image-text similarity scores.
+            logits_per_text: The scaled dot product scores between the text embeddings and the image embeddings.
+            This represents the text-image similarity scores.
         """
         image = self._preprocessor.encode_image(image)
         text = self._tokenizer.encode_text(text)
