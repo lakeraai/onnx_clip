@@ -9,6 +9,13 @@ from PIL import Image
 from onnx_clip import Preprocessor, Tokenizer
 
 
+def softmax(x: np.array) -> np.array:
+    """
+    Computes softmax values for each sets of scores in x.
+    This ensures the output sums to 1.
+    """
+    return (np.exp(x) / np.sum(np.exp(x), axis=1))[0]
+
 class OnnxClip:
     """
     This class can be utilised to predict the most relevant text snippet, given an image,
@@ -54,11 +61,16 @@ class OnnxClip:
         after which they are passed to the ONNX version of the CLIP model.
 
         Example usage:
+            from onnx_clip import OnnxClip, softmax
+            from PIL import Image
+
             image = Image.open("lakera_clip/data/CLIP.png").convert("RGB")
             text = ["a photo of a man", "a photo of a woman"]
+
             onnx_model = OnnxClip()
             logits_per_image, logits_per_text = onnx_model.predict(image, text)
-            probas = lakera_model.softmax(logits_per_image)
+            probas = softmax(logits_per_image)
+
             print(logits_per_image, probas)
             [20.380428 19.790262], [0.64340323 0.35659674]
 
@@ -77,10 +89,3 @@ class OnnxClip:
             None, {"IMAGE": image, "TEXT": text}
         )
         return logits_per_image, logits_per_text
-
-    def softmax(self, x: np.array) -> np.array:
-        """
-        Computes softmax values for each sets of scores in x.
-        This ensures the output sums to 1.
-        """
-        return (np.exp(x) / np.sum(np.exp(x), axis=1))[0]
