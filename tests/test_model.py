@@ -47,7 +47,7 @@ def test_bad_image_channels():
     image, text = load_image_text(convert=False)
 
     onnx_model = OnnxClip()
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         onnx_model.predict(image, text)
 
 
@@ -88,6 +88,7 @@ def test_model_runs():
 
     assert len(probas) == 2
 
+    # values taken from pytorch with ViT-B/32
     probs_clip = [0.6846084, 0.31539157]
 
     assert abs(probs_clip[0] - probas[0]) <= 5
