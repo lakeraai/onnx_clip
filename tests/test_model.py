@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from onnx_clip import OnnxClip
+from onnx_clip import OnnxClip, softmax
 
 
 def load_image_text(convert=True):
@@ -68,7 +68,7 @@ def test_softmax_values():
     """
     onnx_model = OnnxClip()
     logits = np.array([[0, 10, -10]])
-    assert sum(onnx_model.softmax(logits)) == 1
+    assert sum(softmax(logits)) == 1
 
 
 def test_model_runs():
@@ -84,7 +84,7 @@ def test_model_runs():
     assert logits_per_image.shape == (1, 2)
     assert logits_per_text.shape == (2, 1)
 
-    probas = onnx_model.softmax(logits_per_image)
+    probas = softmax(logits_per_image)
 
     assert len(probas) == 2
 
