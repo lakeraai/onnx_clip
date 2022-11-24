@@ -21,13 +21,13 @@ pip install -e .
 All you need to do is call the `OnnxClip` model class. An example can be seen below.
 
 ```python
-from onnx_clip import OnnxClip
+from onnx_clip import OnnxClip, softmax
 from PIL import Image
 
 image = Image.open("onnx_clip/data/CLIP.png").convert("RGB")
 text = ["a photo of a man", "a photo of a woman"]
 onnx_model = OnnxClip()
 logits_per_image, logits_per_text = onnx_model.predict(image, text)
-probas = onnx_model.softmax(logits_per_image)
+probas = softmax(logits_per_image)
 ```
 
