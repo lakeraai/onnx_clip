@@ -13,7 +13,7 @@ This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `gi
 ## Installation
 To install, run the following in the root of the repository:
 ```bash
-pip install -e .
+pip install .
 ```
 
 ## Usage
