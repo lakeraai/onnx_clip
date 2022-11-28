@@ -14,7 +14,7 @@ git lfs install
 ```
 
 ## Installation
-To install, run the following in the root of the repository:
+To install, run the following:
 ```bash
 pip install git+ssh://git@github.com/lakeraai/onnx_clip.git 
 ```
