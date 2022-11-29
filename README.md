@@ -31,3 +31,57 @@ logits_per_image, logits_per_text = onnx_model.predict(image, text)
 probas = softmax(logits_per_image)
 ```
 
+## Building & developing from source
+
+### Install, run, build and publish with Poetry
+
+Install [Poetry](https://python-poetry.org/docs/)
+```
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+```
+
+To setup the project and create a virtual environment run the following command from the project's root directory.
+```
+poetry install
+```
+
+To build a source and wheel distribution of the library run the following command from the project's root directory.
+```
+poetry build
+```
+
+#### Instructions to publish the build artifacts for project maintainers
+Copy this into your poetry config.toml file (or create a new one).
+```
+[repositories]
+[repositories.onnx_clip]
+url = "https://gitlab.com/api/v4/projects/41150990/packages/pypi"
+```
+The file should be located here on MacOs
+```
+~/Library/Application Support/pypoetry/config.toml
+```
+and here on Linux
+```
+~/.config/pypoetry/config.toml
+```
+
+With this setup you can now publish a package like so
+```
+poetry publish --repository onnx_clip -u <access_token_name> -p <access_token_key>
+```
+WARNING: Do not publish to the public pypi registry, e.g. always use the --repository option.
+NOTE1: You must generate [an access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
+with scope set to api.  
+NOTE2: The push will fail if there is already a package with the same version. You can increment the version using [poetry](https://python-poetry.org/docs/cli/#version)
+```
+poetry version
+```
+or by manually changing the version number in pyproject.toml.
+
+# Help
+
+Please let us know how we can support: [earlyaccess@lakera.ai](mailto:earlyaccess@lakera.ai).
+
+# LICENSE
+See the [LICENSE](./LICENSE) file in this repository.
