@@ -33,6 +33,8 @@ probas = softmax(logits_per_image)
 
 ## Building & developing from source
 
+**Note**: The following may give timeout errors due to the filesizes. If so, this can be fixed with poetry version 1.1.13 - see [this related issue.](https://github.com/python-poetry/poetry/issues/6009)
+
 ### Install, run, build and publish with Poetry
 
 Install [Poetry](https://python-poetry.org/docs/)
