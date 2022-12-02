@@ -1,5 +1,9 @@
 # onnx_clip
 
+Made by [Lakera](https://www.lakera.ai/)
+
+For more information, see [this article.](https://www.lakera.ai/insights/openais-clip-in-production)
+
 ## About
 We replicate `OpenAI`'s [CLIP](https://github.com/openai/CLIP) without needing the
 various `PyTorch` dependencies by heavily borrowing their code and adding some of our own. We do this by utilising a `.onnx` format of the model, a pure `NumPy` version of the tokenizer, 
