@@ -14,7 +14,12 @@ def softmax(x: np.array) -> np.array:
     Computes softmax values for each sets of scores in x.
     This ensures the output sums to 1.
     """
-    return (np.exp(x) / np.sum(np.exp(x), axis=1))[0]
+
+    # Exponents
+    exp_arr = np.exp(x)
+
+    return exp_arr / np.sum(exp_arr, axis=1, keepdims=True)
+
 
 class OnnxClip:
     """
@@ -50,7 +55,9 @@ class OnnxClip:
             )
 
     def predict(
-        self, image: Image.Image, text: Union[str, List[str]]
+        self,
+        images: Union[List[Image.Image], List[np.ndarray]],
+        text: Union[str, List[str]]
     ) -> Tuple[np.array, np.array]:
         """
         Given a raw image and a list of text categories, returns two arrays, containing the logit scores corresponding
@@ -89,10 +96,13 @@ class OnnxClip:
             logits_per_text: The scaled dot product scores between the text embeddings and the image embeddings.
             This represents the text-image similarity scores.
         """
-        image = self._preprocessor.encode_image(image)
+        # Preprocess
+        images = [self._preprocessor.encode_image(image) for image in images]
+        # Concatenate
+        batch = np.concatenate(images)
         text = self._tokenizer.encode_text(text)
 
         logits_per_image, logits_per_text = self.model.run(
-            None, {"IMAGE": image, "TEXT": text}
+            None, {"IMAGE": batch, "TEXT": text}
         )
         return logits_per_image, logits_per_text
