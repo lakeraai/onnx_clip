@@ -48,7 +48,7 @@ def test_bad_image_channels():
 
     onnx_model = OnnxClip()
     with pytest.raises(ValueError):
-        onnx_model.predict(image, text)
+        onnx_model.predict([image], text)
 
 
 def test_bad_text_input():
@@ -59,16 +59,16 @@ def test_bad_text_input():
 
     onnx_model = OnnxClip()
     with pytest.raises(TypeError):
-        onnx_model.predict(image, 123)
+        onnx_model.predict([image], 123)
 
 
 def test_softmax_values():
     """
     Test the softmax function works as expected.
     """
-    onnx_model = OnnxClip()
+
     logits = np.array([[0, 10, -10]])
-    assert sum(softmax(logits)) == 1
+    assert all(np.isclose(np.sum(softmax(logits), axis=1), 1))
 
 
 def test_model_runs():
@@ -76,20 +76,25 @@ def test_model_runs():
     Test full process.
     """
     image, text = load_image_text()
+    n_images = 3
+    n_text = 2
 
     onnx_model = OnnxClip()
 
-    logits_per_image, logits_per_text = onnx_model.predict(image, text)
+    logits_per_image, logits_per_text = onnx_model.predict(
+        images=n_images * [image],
+        text=text
+    )
 
-    assert logits_per_image.shape == (1, 2)
-    assert logits_per_text.shape == (2, 1)
+    assert logits_per_image.shape == (n_images, n_text)
+    assert logits_per_text.shape == (n_text, n_images)
 
     probas = softmax(logits_per_image)
 
-    assert len(probas) == 2
+    assert probas.shape == (n_images, n_text)
 
     # values taken from pytorch with ViT-B/32
     probs_clip = [0.6846084, 0.31539157]
 
-    assert abs(probs_clip[0] - probas[0]) <= 5
-    assert abs(probs_clip[1] - probas[1]) <= 5
+    assert abs(probs_clip[0] - probas[0][0]) <= 5
+    assert abs(probs_clip[1] - probas[0][1]) <= 5
