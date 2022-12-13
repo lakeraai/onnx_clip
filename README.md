@@ -24,10 +24,10 @@ All you need to do is call the `OnnxClip` model class. An example can be seen be
 from onnx_clip import OnnxClip, softmax
 from PIL import Image
 
-image = Image.open("onnx_clip/data/CLIP.png").convert("RGB")
+images = [Image.open("onnx_clip/data/CLIP.png").convert("RGB")]
 text = ["a photo of a man", "a photo of a woman"]
 onnx_model = OnnxClip()
-logits_per_image, logits_per_text = onnx_model.predict(image, text)
+logits_per_image, logits_per_text = onnx_model.predict(images, text)
 probas = softmax(logits_per_image)
 ```
 

@@ -12,7 +12,7 @@ from onnx_clip import Preprocessor, Tokenizer
 def softmax(x: np.array) -> np.array:
     """
     Computes softmax values for each sets of scores in x.
-    This ensures the output sums to 1.
+    This ensures the output sums to 1 for each image (along axis 1).
     """
 
     # Exponents
@@ -71,35 +71,38 @@ class OnnxClip:
             from onnx_clip import OnnxClip, softmax
             from PIL import Image
 
-            image = Image.open("lakera_clip/data/CLIP.png").convert("RGB")
+            images = [Image.open("lakera_clip/data/CLIP.png").convert("RGB")]
             text = ["a photo of a man", "a photo of a woman"]
 
             onnx_model = OnnxClip()
-            logits_per_image, logits_per_text = onnx_model.predict(image, text)
+            logits_per_image, logits_per_text = onnx_model.predict(images, text)
             probas = softmax(logits_per_image)
 
             print(logits_per_image, probas)
-            [20.380428 19.790262], [0.64340323 0.35659674]
+            [[20.380428 19.790262]], [[0.64340323 0.35659674]]
 
             print(logits_per_text)
-            [20.380428
-            19.790262]
+            [
+                [20.380428],
+                [19.790262]
+            ]
 
         Args:
-            image: the original PIL image. This image must be a 3-channel (RGB) image.
-                   Can be any size, as the preprocessing step is done to convert this image to size (224, 224).
+            images: the original PIL image or numpy array. This image must be a 3-channel (RGB) image.
+                Can be any size, as the preprocessing step is done to convert this image to size (224, 224).
             text: the text to tokenize. Each category in the given list cannot be longer than 77 characters.
 
         Returns:
-            logits_per_image: The scaled dot product scores between the image embeddings and the text embeddings.
-            This represents the image-text similarity scores.
-            logits_per_text: The scaled dot product scores between the text embeddings and the image embeddings.
-            This represents the text-image similarity scores.
+            logits_per_image: The scaled dot product scores between each image embedding and the text embeddings.
+                This represents the image-text similarity scores.
+            logits_per_text: The scaled dot product scores between each text embedding and the image embeddings.
+                This represents the text-image similarity scores.
         """
-        # Preprocess
+        # Preprocess images
         images = [self._preprocessor.encode_image(image) for image in images]
         # Concatenate
         batch = np.concatenate(images)
+        # Preprocess text
         text = self._tokenizer.encode_text(text)
 
         logits_per_image, logits_per_text = self.model.run(

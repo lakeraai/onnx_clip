@@ -93,10 +93,10 @@ class Preprocessor:
         if not isinstance(img, (Image.Image, np.ndarray)):
             raise TypeError(f"Expected PIL Image but instead got {type(img)}")
 
-        # Resize
         if isinstance(img, Image.Image):
             # Convert to NumPy
             img = np.array(img)
+        # Resize
         img = self._smart_resize(img)
         # Crop the center
         img = img[
