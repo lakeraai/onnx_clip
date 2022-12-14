@@ -10,6 +10,9 @@ not perfectly match those of `CLIP` but are close enough for our purposes.
 ## git lfs
 This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `git lfs install` before cloning.
 
+In case you use the `onnx_clip` project not as a repo, but as a package, the model will be downloaded from
+[the public S3 bucket](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx).
+
 ## Installation
 To install, run the following in the root of the repository:
 ```bash
