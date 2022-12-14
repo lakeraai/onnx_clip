@@ -1,10 +1,12 @@
 import errno
 import os
+import logging
 from typing import List, Tuple, Union
 
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
+import boto3
 
 from onnx_clip import Preprocessor, Tokenizer
 
@@ -29,15 +31,19 @@ class OnnxClip:
     PyTorch dependencies.
     """
 
-    def __init__(self):
+    def __init__(self, silent_download: bool = False):
         """
         Instantiates the model and required encoding classes.
+
+        Args:
+            silent_download - if True, the function won't show a warning in
+                case when the model needs to be downloaded from the S3 bucket.
         """
-        self.model = self._load_model()
+        self.model = self._load_model(silent_download)
         self._tokenizer = Tokenizer()
         self._preprocessor = Preprocessor()
 
-    def _load_model(self):
+    def _load_model(self, silent: bool):
         """
         Grabs the ONNX implementation of CLIP's ViT-B/32 :
         https://github.com/openai/CLIP/blob/main/clip/model.py
@@ -45,14 +51,33 @@ class OnnxClip:
         We have exported it to ONNX to remove the PyTorch dependencies.
         """
         MODEL_ONNX_EXPORT_PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "data/clip_model_vitb32.onnx"
+            os.path.dirname(os.path.abspath(__file__)),
+            "data/clip_model_vitb32.onnx"
         )
-        if os.path.exists(MODEL_ONNX_EXPORT_PATH):
-            return ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
-        else:
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), MODEL_ONNX_EXPORT_PATH
+
+        try:
+            if os.path.exists(MODEL_ONNX_EXPORT_PATH):
+                model = ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
+            else:
+                raise FileNotFoundError(
+                    errno.ENOENT, os.strerror(errno.ENOENT),
+                    MODEL_ONNX_EXPORT_PATH
+                )
+        except Exception:
+            if not silent:
+                logging.warning(
+                    f"The model file ({MODEL_ONNX_EXPORT_PATH}) doesn't exist "
+                    f"or it is invalid. Downloading it from the public S3 "
+                    f"bucket instead: https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx."  # noqa: E501
+                )
+            # Download from S3
+            s3_client = boto3.client('s3')
+            s3_client.download_file(
+                'lakera-clip', 'clip_model.onnx', MODEL_ONNX_EXPORT_PATH
             )
+            model = ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
+
+        return model
 
     def predict(
         self,
