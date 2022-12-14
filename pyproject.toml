@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "onnx_clip"
-version = "1.0"
+version = "1.1"
 description = "Replicating CLIP without PyTorch dependencies."
 readme = "README.md"
 authors = ["Lakera AI <dev@lakera.ai>"]
@@ -25,3 +25,4 @@ onnxruntime = ">=1.4.0"
 pillow = "^8.4.0"
 ftfy = "^6.0.3"
 regex = "*"
+boto3 = "^1.23.10"
