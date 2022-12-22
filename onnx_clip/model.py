@@ -7,6 +7,8 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 import boto3
+from botocore import UNSIGNED
+from botocore.client import Config
 
 from onnx_clip import Preprocessor, Tokenizer
 
@@ -71,7 +73,9 @@ class OnnxClip:
                     f"bucket instead: https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx."  # noqa: E501
                 )
             # Download from S3
-            s3_client = boto3.client('s3')
+            s3_client = boto3.client(
+                's3', config=Config(signature_version=UNSIGNED)
+            )
             s3_client.download_file(
                 'lakera-clip', 'clip_model.onnx', MODEL_ONNX_EXPORT_PATH
             )
