@@ -3,5 +3,6 @@ test-clip:
   stage: test
   before_script:
     - pip install .
+    - pip install pytest
   script:
     - pytest .
