@@ -1,0 +1,8 @@
+test-clip:
+  image: python:3.8
+  stage: test
+  before_script:
+    - pip install .
+    - pip install pytest
+  script:
+    - pytest .
