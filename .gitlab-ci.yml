@@ -1,5 +1,5 @@
 test-clip:
-  image: python:3.6
+  image: python:3.8
   stage: test
   before_script:
     - pip install .
