@@ -122,5 +122,6 @@ class Preprocessor:
         # Mimic the pytorch tensor format for Model class
         img = np.transpose(img, (2, 0, 1))
         img = np.expand_dims(img, 0)
+        img = img.astype(np.float32)
 
         return img

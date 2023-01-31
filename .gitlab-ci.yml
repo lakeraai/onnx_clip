@@ -1,0 +1,6 @@
+test-clip:
+  stage: test
+  before_script:
+    - pip install .
+  script:
+    - pytest .
