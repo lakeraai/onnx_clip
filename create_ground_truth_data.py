@@ -4,15 +4,7 @@ Copyright 2023 Lakera AI. All Rights Reserved.
 A simple script that loads predictions made by the original CLIP implementation
 so that we can make sure that our version matches.
 
-Expected output:
-
-Image embeddings sum: -10.652454376220703
-Image embeddings part: [0.2936638295650482, -0.14002713561058044, 0.30331429839134216, -0.14682231843471527, 0.027491729706525803]
-
-Text embeddings sums: [9.667448043823242, 10.100772857666016]
-Text embeddings part: [0.2936638295650482, -0.14002713561058044, 0.30331429839134216, -0.14682231843471527, 0.027491729706525803]
-
-logits_per_image: [[18.55001449584961, 17.774993896484375]]
+This is used to generate constants/fixtures for the tests.
 """
 import os
 

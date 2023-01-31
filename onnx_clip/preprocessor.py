@@ -12,9 +12,14 @@ class Preprocessor:
 
     # Fixed variables that ensure the correct output shapes and values for the `Model` class.
     CLIP_INPUT_SIZE = 224
-    CROP_CENTER_PADDING = 224
-    NORM_MEAN = np.array([0.485, 0.456, 0.406]).reshape((1, 1, 3))
-    NORM_STD = np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3))
+    # Normalization constants taken from original CLIP:
+    # https://github.com/openai/CLIP/blob/3702849800aa56e2223035bccd1c6ef91c704ca8/clip/clip.py#L85
+    NORM_MEAN = np.array([0.48145466, 0.4578275, 0.40821073]).reshape(
+        (1, 1, 3)
+    )
+    NORM_STD = np.array([0.26862954, 0.26130258, 0.27577711]).reshape(
+        (1, 1, 3)
+    )
 
     def _smart_resize(self, img: np.ndarray) -> np.array:
         """Resizing that preserves the image ratio"""
@@ -28,12 +33,6 @@ class Preprocessor:
                 f"Expected 3-channel RGB image but got image with {img.shape[2]} channels"
             )
 
-        # The expected size of the image after we resize it
-        # and pad to have a square format
-        resized_sq_size = (
-            Preprocessor.CLIP_INPUT_SIZE + 2 * Preprocessor.CROP_CENTER_PADDING
-        )
-
         # Current height and width
         h, w = img.shape[0:2]
 
@@ -42,39 +41,45 @@ class Preprocessor:
                 f"Height and width of the image should both be non-zero but got shape {h, w}"
             )
 
-        # The size of the image after we resize but before we pad
-        if h > w:
-            resized_h = resized_sq_size
-            resized_w = round(resized_h * w / h)
-        else:
-            resized_w = resized_sq_size
-            resized_h = round(resized_w * h / w)
+        target_size = Preprocessor.CLIP_INPUT_SIZE
 
-        # Resize while preserving the ratio
-        img = cv.resize(img, (resized_w, resized_h), interpolation=cv.INTER_LINEAR)
-
-        # Pad the image to make it square
-        vert_residual = resized_sq_size - resized_h
-        hor_residual = resized_sq_size - resized_w
-        vert_pad = vert_residual // 2
-        hor_pad = hor_residual // 2
-        if len(img.shape) == 3:
-            padding = (
-                (vert_pad, vert_residual - vert_pad),
-                (hor_pad, hor_residual - hor_pad),
-                (0, 0),
-            )
+        # Resize so that the smaller dimension matches the required input size.
+        # Matches PyTorch:
+        # https://github.com/pytorch/vision/blob/7cf0f4cc1801ff1892007c7a11f7c35d8dfb7fd0/torchvision/transforms/functional.py#L366
+        if h < w:
+            resized_h = target_size
+            resized_w = int(resized_h * w / h)
         else:
-            # If grayscale, cv.resize will drop the last dimension
-            padding = (
-                (vert_pad, vert_residual - vert_pad),
-                (hor_pad, hor_residual - hor_pad),
+            resized_w = target_size
+            resized_h = int(resized_w * h / w)
+
+        # PIL resizing behaves slightly differently than OpenCV because of
+        # antialiasing. See also
+        # https://pytorch.org/vision/main/generated/torchvision.transforms.functional.resize.html
+        # CLIP uses PIL, so we do too to match its results. But if you don't
+        # want to have PIL as a dependency, feel free to change the code to
+        # use the other branch.
+        use_pil_for_resizing = True
+
+        if use_pil_for_resizing:
+            # https://github.com/pytorch/vision/blob/7cf0f4cc1801ff1892007c7a11f7c35d8dfb7fd0/torchvision/transforms/functional_pil.py#L240
+            img_pil = Image.fromarray(img)
+            img_pil = img_pil.resize(
+                (resized_w, resized_h), resample=Image.BICUBIC
             )
-        img = np.pad(
-            img,
-            padding,
-            constant_values=0,
-        )
+            img = np.array(img_pil)
+        else:
+            img = cv.resize(
+                img, (resized_w, resized_h), interpolation=cv.INTER_CUBIC
+            )
+
+        # Now crop to a square
+        y_from = (resized_h - target_size) // 2
+        x_from = (resized_w - target_size) // 2
+        img = img[
+            y_from : y_from + target_size, x_from : x_from + target_size, :
+        ]
+
         return img
 
     def encode_image(self, img: Union[Image.Image, np.ndarray]) -> np.array:
@@ -91,18 +96,16 @@ class Preprocessor:
 
         """
         if not isinstance(img, (Image.Image, np.ndarray)):
-            raise TypeError(f"Expected PIL Image but instead got {type(img)}")
+            raise TypeError(
+                f"Expected PIL Image or np.ndarray but instead got {type(img)}"
+            )
 
         if isinstance(img, Image.Image):
             # Convert to NumPy
             img = np.array(img)
+
         # Resize
         img = self._smart_resize(img)
-        # Crop the center
-        img = img[
-            Preprocessor.CROP_CENTER_PADDING : -Preprocessor.CROP_CENTER_PADDING,
-            Preprocessor.CROP_CENTER_PADDING : -Preprocessor.CROP_CENTER_PADDING,
-        ]
 
         # Normalize to values [0, 1]
         img = img / 255.0
@@ -118,6 +121,6 @@ class Preprocessor:
 
         # Mimic the pytorch tensor format for Model class
         img = np.transpose(img, (2, 0, 1))
-        img = img.astype(np.float32).reshape(1, 3, 224, 224)
+        img = np.expand_dims(img, 0)
 
         return img
