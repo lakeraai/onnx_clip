@@ -1,11 +1,13 @@
 # onnx_clip
 
-## About
-The purpose of this repository is to replicate the functionality of [CLIP](https://github.com/openai/CLIP) without needing the
-various `PyTorch` dependencies. We do this by utilising a `.onnx` format of the model, a pure `NumPy` version of the tokenizer, 
-and an accurate approximation of the [preprocess function.](https://github.com/openai/CLIP/blob/main/clip/clip.py#L79)
-Due to this final approximation, the output logits do
-not perfectly match those of `CLIP` but are close enough for our purposes.
+An [ONNX](https://onnx.ai/)-based implementation of [CLIP](https://github.com/openai/CLIP) that doesn't
+depend on `torch` or `torchvision`.
+
+This works by
+- running the text and vision encoders (the ViT-B/32 variant) in [ONNX Runtime](https://onnxruntime.ai/)
+- using a pure NumPy version of the tokenizer
+- using a pure NumPy+PIL version of the [preprocess function](https://github.com/openai/CLIP/blob/3702849800aa56e2223035bccd1c6ef91c704ca8/clip/clip.py#L79).
+  The PIL dependency could also be removed with minimal code changes - see `preprocessor.py`.
 
 ## git lfs
 This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `git lfs install` before cloning.
@@ -27,7 +29,7 @@ All you need to do is call the `OnnxClip` model class. An example can be seen be
 from onnx_clip import OnnxClip, softmax
 from PIL import Image
 
-images = [Image.open("onnx_clip/data/CLIP.png").convert("RGB")]
+images = [Image.open("onnx_clip/data/franz-kafka.jpg").convert("RGB")]
 text = ["a photo of a man", "a photo of a woman"]
 onnx_model = OnnxClip()
 logits_per_image, logits_per_text = onnx_model.predict(images, text)
@@ -84,9 +86,11 @@ poetry version
 ```
 or by manually changing the version number in pyproject.toml.
 
-# Help
+## Help
 
 Please let us know how we can support: [earlyaccess@lakera.ai](mailto:earlyaccess@lakera.ai).
 
-# LICENSE
+## LICENSE
 See the [LICENSE](./LICENSE) file in this repository.
+
+The `franz-kafka.jpg` is taken from [here](https://www.knesebeck-verlag.de/franz_kafka/p-1/270).
