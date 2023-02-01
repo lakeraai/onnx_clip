@@ -10,10 +10,13 @@ This works by
   The PIL dependency could also be removed with minimal code changes - see `preprocessor.py`.
 
 ## git lfs
-This repository uses Git LFS for the `clip_model.onnx` file. Make sure to do `git lfs install` before cloning.
+This repository uses Git LFS for the `.onnx` files of the image and text models.
+Make sure to do `git lfs install` before cloning.
 
-In case you use the `onnx_clip` project not as a repo, but as a package, the model will be downloaded from
-[the public S3 bucket](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx).
+In case you use the `onnx_clip` project not as a repo, but as a package,
+the models will be downloaded from the public S3 bucket:
+[image model](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_image_model_vitb32.onnx),
+[text model](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_text_model_vitb32.onnx).
 
 ## Installation
 To install, run the following in the root of the repository:
@@ -23,17 +26,32 @@ pip install .
 
 ## Usage
 
-All you need to do is call the `OnnxClip` model class. An example can be seen below.
+All you need to do is call the `OnnxClip` model class. An example:
 
 ```python
-from onnx_clip import OnnxClip, softmax
+from onnx_clip import OnnxClip, softmax, get_similarity_scores
 from PIL import Image
 
 images = [Image.open("onnx_clip/data/franz-kafka.jpg").convert("RGB")]
-text = ["a photo of a man", "a photo of a woman"]
+texts = ["a photo of a man", "a photo of a woman"]
+
 onnx_model = OnnxClip()
-logits_per_image, logits_per_text = onnx_model.predict(images, text)
-probas = softmax(logits_per_image)
+
+# Unlike the original CLIP, there is no need to run tokenization/preprocessing
+# separately - simply run get_image_embeddings directly on PIL images/NumPy
+# arrays, and run get_text_embeddings directly on strings.
+image_embeddings = onnx_model.get_image_embeddings(images)
+text_embeddings = onnx_model.get_text_embeddings(texts)
+
+# To use the embeddings for zero-shot classification, you can use these two
+# functions. Here we run on a single image, but any number is supported.
+logits = get_similarity_scores(image_embeddings, text_embeddings)
+probabilities = softmax(logits)
+
+print("Logits:", logits)
+
+for text, p in zip(texts, probabilities[0]):
+    print(f"Probability that the image is '{text}': {p:.3f}")
 ```
 
 ## Building & developing from source
@@ -88,7 +106,7 @@ or by manually changing the version number in pyproject.toml.
 
 ## Help
 
-Please let us know how we can support: [earlyaccess@lakera.ai](mailto:earlyaccess@lakera.ai).
+Please let us know how we can support you: [earlyaccess@lakera.ai](mailto:earlyaccess@lakera.ai).
 
 ## LICENSE
 See the [LICENSE](./LICENSE) file in this repository.

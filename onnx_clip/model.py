@@ -13,7 +13,7 @@ from botocore.client import Config
 from onnx_clip import Preprocessor, Tokenizer
 
 
-def softmax(x: np.array) -> np.array:
+def softmax(x: np.ndarray) -> np.ndarray:
     """
     Computes softmax values for each sets of scores in x.
     This ensures the output sums to 1 for each image (along axis 1).
@@ -25,12 +25,67 @@ def softmax(x: np.array) -> np.array:
     return exp_arr / np.sum(exp_arr, axis=1, keepdims=True)
 
 
+def cosine_similarity(
+    embeddings_1: np.ndarray, embeddings_2: np.ndarray
+) -> np.ndarray:
+    """Compute the pairwise cosine similarities between two embedding arrays.
+
+    Args:
+        embeddings_1: An array of embeddings of shape (N, D).
+        embeddings_2: An array of embeddings of shape (M, D).
+
+    Returns:
+        An array of shape (N, M) with the pairwise cosine similarities.
+    """
+
+    for embeddings in [embeddings_1, embeddings_2]:
+        if len(embeddings.shape) != 2:
+            raise ValueError(
+                f"Expected 2-D arrays but got shape {embeddings.shape}."
+            )
+
+    d1 = embeddings_1.shape[1]
+    d2 = embeddings_2.shape[1]
+    if d1 != d2:
+        raise ValueError(
+            "Expected second dimension of embeddings_1 and embeddings_2 to "
+            f"match, but got {d1} and {d2} respectively."
+        )
+
+    def normalize(embeddings):
+        return embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+
+    embeddings_1 = normalize(embeddings_1)
+    embeddings_2 = normalize(embeddings_2)
+
+    return embeddings_1 @ embeddings_2.T
+
+
+def get_similarity_scores(
+    embeddings_1: np.ndarray, embeddings_2: np.ndarray
+) -> np.ndarray:
+    """Compute pairwise similarity scores between two arrays of embeddings.
+
+    For zero-shot classification, these can be used as logits. To do so, call
+    `get_similarity_scores(image_embeddings, text_embeddigs)`.
+
+    Args:
+        embeddings_1: An array of embeddings of shape (N, D).
+        embeddings_2: An array of embeddings of shape (M, D).
+
+    Returns:
+        An array of shape (N, M) with the pairwise similarity scores.
+    """
+    return cosine_similarity(embeddings_1, embeddings_2) * 100
+
+
 class OnnxClip:
     """
-    This class can be utilised to predict the most relevant text snippet, given an image,
-    without directly optimizing for the task, similarly to the zero-shot capabilities of GPT-2 and 3.
-    The difference between this class and [CLIP](https://github.com/openai/CLIP) is that here we do not use any
-    PyTorch dependencies.
+    This class can be utilised to predict the most relevant text snippet, given
+    an image, without directly optimizing for the task, similarly to the
+    zero-shot capabilities of GPT-2 and 3. The difference between this class
+    and [CLIP](https://github.com/openai/CLIP) is that here we don't depend on
+    `torch` or `torchvision`.
     """
 
     def __init__(self, silent_download: bool = False):
@@ -39,102 +94,90 @@ class OnnxClip:
 
         Args:
             silent_download - if True, the function won't show a warning in
-                case when the model needs to be downloaded from the S3 bucket.
+                case when the models need to be downloaded from the S3 bucket.
         """
-        self.model = self._load_model(silent_download)
+        self.image_model, self.text_model = self._load_models(silent_download)
         self._tokenizer = Tokenizer()
         self._preprocessor = Preprocessor()
 
-    def _load_model(self, silent: bool):
+    @staticmethod
+    def _load_models(
+        silent: bool,
+    ) -> Tuple[ort.InferenceSession, ort.InferenceSession]:
         """
         Grabs the ONNX implementation of CLIP's ViT-B/32 :
         https://github.com/openai/CLIP/blob/main/clip/model.py
 
-        We have exported it to ONNX to remove the PyTorch dependencies.
+        We have exported it to ONNX to remove the dependency on `torch` and
+        `torchvision`.
         """
-        MODEL_ONNX_EXPORT_PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "data/clip_model_vitb32.onnx"
-        )
+        IMAGE_MODEL_FILE = "clip_image_model_vitb32.onnx"
+        TEXT_MODEL_FILE = "clip_text_model_vitb32.onnx"
+        base_dir = os.path.dirname(os.path.abspath(__file__))
 
+        models = []
+        for model_file in [IMAGE_MODEL_FILE, TEXT_MODEL_FILE]:
+            path = os.path.join(base_dir, "data", model_file)
+            models.append(OnnxClip._load_model(path, silent))
+
+        return models[0], models[1]
+
+    @staticmethod
+    def _load_model(path: str, silent: bool):
         try:
-            if os.path.exists(MODEL_ONNX_EXPORT_PATH):
-                model = ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
+            if os.path.exists(path):
+                return ort.InferenceSession(path)
             else:
                 raise FileNotFoundError(
-                    errno.ENOENT, os.strerror(errno.ENOENT),
-                    MODEL_ONNX_EXPORT_PATH
+                    errno.ENOENT,
+                    os.strerror(errno.ENOENT),
+                    path,
                 )
         except Exception:
             if not silent:
                 logging.warning(
-                    f"The model file ({MODEL_ONNX_EXPORT_PATH}) doesn't exist "
+                    f"The model file ({path}) doesn't exist "
                     f"or it is invalid. Downloading it from the public S3 "
                     f"bucket instead: https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx."  # noqa: E501
                 )
             # Download from S3
             s3_client = boto3.client(
-                's3', config=Config(signature_version=UNSIGNED)
+                "s3", config=Config(signature_version=UNSIGNED)
             )
             s3_client.download_file(
-                'lakera-clip', 'clip_model.onnx', MODEL_ONNX_EXPORT_PATH
+                "lakera-clip", os.path.basename(path), path
             )
-            model = ort.InferenceSession(MODEL_ONNX_EXPORT_PATH)
+            return ort.InferenceSession(path)
 
-        return model
-
-    def predict(
-        self,
-        images: Union[List[Image.Image], List[np.ndarray]],
-        text: Union[str, List[str]]
-    ) -> Tuple[np.array, np.array]:
-        """
-        Given a raw image and a list of text categories, returns two arrays, containing the logit scores corresponding
-        to each image and text input.
-        The values are cosine similarities between the corresponding image and text features, times 100.
-
-        The images and text are encoded in a similar manner to the `preprocess` and `tokenize` functions within CLIP,
-        after which they are passed to the ONNX version of the CLIP model.
-
-        Example usage:
-            from onnx_clip import OnnxClip, softmax
-            from PIL import Image
-
-            images = [Image.open("lakera_clip/data/CLIP.png").convert("RGB")]
-            text = ["a photo of a man", "a photo of a woman"]
-
-            onnx_model = OnnxClip()
-            logits_per_image, logits_per_text = onnx_model.predict(images, text)
-            probas = softmax(logits_per_image)
-
-            print(logits_per_image, probas)
-            [[20.380428 19.790262]], [[0.64340323 0.35659674]]
-
-            print(logits_per_text)
-            [
-                [20.380428],
-                [19.790262]
-            ]
+    def get_image_embeddings(
+        self, images: Union[List[Image.Image], List[np.ndarray]]
+    ) -> np.ndarray:
+        """Compute the embeddings for a list of images.
 
         Args:
-            images: the original PIL image or numpy array. This image must be a 3-channel (RGB) image.
-                Can be any size, as the preprocessing step is done to convert this image to size (224, 224).
-            text: the text to tokenize. Each category in the given list cannot be longer than 77 characters.
+            images: A list of images to run on. Each image must be a 3-channel
+                (RGB) image. Can be any size, as the preprocessing step will
+                resize each image to size (224, 224).
 
         Returns:
-            logits_per_image: The scaled dot product scores between each image embedding and the text embeddings.
-                This represents the image-text similarity scores.
-            logits_per_text: The scaled dot product scores between each text embedding and the image embeddings.
-                This represents the text-image similarity scores.
+            An array of embeddings of shape (len(images), 512).
         """
         # Preprocess images
         images = [self._preprocessor.encode_image(image) for image in images]
         # Concatenate
         batch = np.concatenate(images)
-        # Preprocess text
-        text = self._tokenizer.encode_text(text)
 
-        logits_per_image, logits_per_text = self.model.run(
-            None, {"IMAGE": batch, "TEXT": text}
-        )
-        return logits_per_image, logits_per_text
+        return self.image_model.run(None, {"IMAGE": batch})[0]
+
+    def get_text_embeddings(self, texts: List[str]) -> np.ndarray:
+        """Compute the embeddings for a list of texts.
+
+        Args:
+            texts: A list of texts to run on. Each entry can be at most
+                77 characters.
+
+        Returns:
+            An array of embeddings of shape (len(texts), 512).
+        """
+        text = self._tokenizer.encode_text(texts)
+        return self.text_model.run(None, {"TEXT": text})[0]
