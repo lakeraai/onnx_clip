@@ -21,8 +21,8 @@ class Preprocessor:
         (1, 1, 3)
     )
 
-    def _smart_resize(self, img: np.ndarray) -> np.array:
-        """Resizing that preserves the image ratio"""
+    def _smart_resize(self, img: np.ndarray) -> np.ndarray:
+        """Resize and crop an image to a square, preserving the aspect ratio."""
 
         if len(img.shape) > 3:
             raise ValueError(
@@ -82,18 +82,15 @@ class Preprocessor:
 
         return img
 
-    def encode_image(self, img: Union[Image.Image, np.ndarray]) -> np.array:
-        """
-        The function for preprocessing the images in an approximate way to CLIP's preprocess() function:
-        https://github.com/openai/CLIP/blob/main/clip/clip.py#L79
-        This is the function that causes a (small) deviation from CLIP results, as the interpolation and
-        normalization methodologies are different.
+    def encode_image(self, img: Union[Image.Image, np.ndarray]) -> np.ndarray:
+        """Preprocesses the images like CLIP's preprocess() function:
+        https://github.com/openai/CLIP/blob/3702849800aa56e2223035bccd1c6ef91c704ca8/clip/clip.py#L79
+
         Args:
             img: PIL image or numpy array
 
         Returns:
-            img: numpy image after resizing, interpolation and center cropping.
-
+            img: numpy image after resizing, center cropping and normalization.
         """
         if not isinstance(img, (Image.Image, np.ndarray)):
             raise TypeError(
