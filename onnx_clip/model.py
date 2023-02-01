@@ -135,10 +135,10 @@ class OnnxClip:
                 )
         except Exception:
             if not silent:
-                logging.warning(
+                logging.info(
                     f"The model file ({path}) doesn't exist "
                     f"or it is invalid. Downloading it from the public S3 "
-                    f"bucket instead: https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_model.onnx."  # noqa: E501
+                    f"bucket: https://lakera-clip.s3.eu-west-1.amazonaws.com/{os.path.basename(path)}."  # noqa: E501
                 )
             # Download from S3
             s3_client = boto3.client(
