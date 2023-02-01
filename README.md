@@ -75,34 +75,17 @@ To build a source and wheel distribution of the library run the following comman
 poetry build
 ```
 
-#### Instructions to publish the build artifacts for project maintainers
-Copy this into your poetry config.toml file (or create a new one).
-```
-[repositories]
-[repositories.onnx_clip]
-url = "https://gitlab.com/api/v4/projects/41150990/packages/pypi"
-```
-The file should be located here on MacOs
-```
-~/Library/Application Support/pypoetry/config.toml
-```
-and here on Linux
-```
-~/.config/pypoetry/config.toml
-```
+#### Publishing a new version to PyPI (for project maintainers)
 
-With this setup you can now publish a package like so
+First, remove/move the downloaded LFS files, so that they're not packaged with the code.
+Otherwise, this creates a huge `.whl` file that PyPI refuses and it causes confusing errors.
+
+Then, follow [this guide](https://towardsdatascience.com/how-to-publish-a-python-package-to-pypi-using-poetry-aa804533fc6f).
+tl;dr: go to the [PyPI account page](https://pypi.org/manage/account/), generate an API token
+and put it into the `$PYPI_PASSWORD` environment variable. Then run
+```shell
+poetry publish --build --username "__token__" --password $PYPI_PASSWORD
 ```
-poetry publish --repository onnx_clip -u <access_token_name> -p <access_token_key>
-```
-WARNING: Do not publish to the public pypi registry, e.g. always use the --repository option.
-NOTE1: You must generate [an access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
-with scope set to api.  
-NOTE2: The push will fail if there is already a package with the same version. You can increment the version using [poetry](https://python-poetry.org/docs/cli/#version)
-```
-poetry version
-```
-or by manually changing the version number in pyproject.toml.
 
 ## Help
 

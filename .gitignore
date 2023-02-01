@@ -4,6 +4,7 @@ __pycache__/
 *.egg-info
 .pytest_cache
 .ipynb_checkpoints
+dist/
 
 thumbs.db
 .DS_Store
