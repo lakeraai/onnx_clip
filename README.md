@@ -9,15 +9,6 @@ This works by
 - using a pure NumPy+PIL version of the [preprocess function](https://github.com/openai/CLIP/blob/3702849800aa56e2223035bccd1c6ef91c704ca8/clip/clip.py#L79).
   The PIL dependency could also be removed with minimal code changes - see `preprocessor.py`.
 
-## git lfs
-This repository uses Git LFS for the `.onnx` files of the image and text models.
-Make sure to do `git lfs install` before cloning.
-
-In case you use the `onnx_clip` project not as a repo, but as a package,
-the models will be downloaded from the public S3 bucket:
-[image model](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_image_model_vitb32.onnx),
-[text model](https://lakera-clip.s3.eu-west-1.amazonaws.com/clip_text_model_vitb32.onnx).
-
 ## Installation
 To install, run the following in the root of the repository:
 ```bash
