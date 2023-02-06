@@ -126,7 +126,10 @@ class OnnxClip:
     def _load_model(path: str, silent: bool):
         try:
             if os.path.exists(path):
-                return ort.InferenceSession(path)
+                # `providers` need to be set explicitly since ORT 1.9
+                return ort.InferenceSession(
+                    path, providers=ort.get_available_providers()
+                )
             else:
                 raise FileNotFoundError(
                     errno.ENOENT,
@@ -147,7 +150,10 @@ class OnnxClip:
             s3_client.download_file(
                 "lakera-clip", os.path.basename(path), path
             )
-            return ort.InferenceSession(path)
+            # `providers` need to be set explicitly since ORT 1.9
+            return ort.InferenceSession(
+                path, providers=ort.get_available_providers()
+            )
 
     def get_image_embeddings(
         self, images: Union[List[Image.Image], List[np.ndarray]]
