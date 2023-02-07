@@ -1,7 +1,7 @@
 import errno
 import os
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable, Iterator, TypeVar, Optional
 
 import numpy as np
 import onnxruntime as ort
@@ -88,17 +88,28 @@ class OnnxClip:
     `torch` or `torchvision`.
     """
 
-    def __init__(self, silent_download: bool = False):
+    # The length of each embedding array
+    EMBEDDING_SIZE = 512
+
+    def __init__(
+        self, silent_download: bool = False, batch_size: Optional[int] = None
+    ):
         """
         Instantiates the model and required encoding classes.
 
         Args:
-            silent_download - if True, the function won't show a warning in
+            silent_download: If True, the function won't show a warning in
                 case when the models need to be downloaded from the S3 bucket.
+            batch_size: If set, splits the lists in `get_image_embeddings`
+                and `get_text_embeddings` into batches of this size before
+                passing them to the model. The embeddings are then concatenated
+                back together before being returned. This is necessary when
+                passing large amounts of data (perhaps ~100 or more).
         """
         self.image_model, self.text_model = self._load_models(silent_download)
         self._tokenizer = Tokenizer()
         self._preprocessor = Preprocessor()
+        self._batch_size = batch_size
 
     @staticmethod
     def _load_models(
@@ -156,7 +167,9 @@ class OnnxClip:
             )
 
     def get_image_embeddings(
-        self, images: Union[List[Image.Image], List[np.ndarray]]
+        self,
+        images: Iterable[Union[Image.Image, np.ndarray]],
+        with_batching: bool = False,
     ) -> np.ndarray:
         """Compute the embeddings for a list of images.
 
@@ -164,26 +177,92 @@ class OnnxClip:
             images: A list of images to run on. Each image must be a 3-channel
                 (RGB) image. Can be any size, as the preprocessing step will
                 resize each image to size (224, 224).
+            with_batching: Whether to use batching - see the `batch_size` param
+                in `__init__()`
 
         Returns:
             An array of embeddings of shape (len(images), 512).
         """
-        # Preprocess images
-        images = [self._preprocessor.encode_image(image) for image in images]
-        # Concatenate
-        batch = np.concatenate(images)
+        if not with_batching or self._batch_size is None:
+            # Preprocess images
+            images = [
+                self._preprocessor.encode_image(image) for image in images
+            ]
+            batch = np.concatenate(images)
 
-        return self.image_model.run(None, {"IMAGE": batch})[0]
+            return self.image_model.run(None, {"IMAGE": batch})[0]
 
-    def get_text_embeddings(self, texts: List[str]) -> np.ndarray:
+        else:
+            embeddings = []
+            for batch in to_batches(images, self._batch_size):
+                embeddings.append(
+                    self.get_image_embeddings(batch, with_batching=False)
+                )
+
+            return np.concatenate(embeddings)
+
+    def get_text_embeddings(
+        self, texts: Iterable[str], with_batching: bool = True
+    ) -> np.ndarray:
         """Compute the embeddings for a list of texts.
 
         Args:
             texts: A list of texts to run on. Each entry can be at most
                 77 characters.
+            with_batching: Whether to use batching - see the `batch_size` param
+                in `__init__()`
 
         Returns:
             An array of embeddings of shape (len(texts), 512).
         """
-        text = self._tokenizer.encode_text(texts)
-        return self.text_model.run(None, {"TEXT": text})[0]
+        if not with_batching or self._batch_size is None:
+            text = self._tokenizer.encode_text(texts)
+            return self.text_model.run(None, {"TEXT": text})[0]
+        else:
+            embeddings = []
+            for batch in to_batches(texts, self._batch_size):
+                embeddings.append(
+                    self.get_text_embeddings(batch, with_batching=False)
+                )
+
+            return np.concatenate(embeddings)
+
+
+T = TypeVar("T")
+
+
+def to_batches(items: Iterable[T], size: int) -> Iterator[List[T]]:
+    """
+    Splits an iterable (e.g. a list) into batches of length `size`. Includes
+    the last, potentially shorter batch.
+
+    Examples:
+        >>> list(to_batches([1, 2, 3, 4], size=2))
+        [[1, 2], [3, 4]]
+        >>> list(to_batches([1, 2, 3, 4, 5], size=2))
+        [[1, 2], [3, 4], [5]]
+
+        # To limit the number of batches returned
+        # (avoids reading the rest of `items`):
+        >>> import itertools
+        >>> list(itertools.islice(to_batches([1, 2, 3, 4, 5], size=2), 1))
+        [[1, 2]]
+
+    Args:
+        items: The iterable to split.
+        size: How many elements per batch.
+    """
+    if size < 1:
+        raise ValueError("Chunk size must be positive.")
+
+    batch = []
+    for item in items:
+        batch.append(item)
+
+        if len(batch) == size:
+            yield batch
+            batch = []
+
+    # The last, potentially incomplete batch
+    if batch:
+        yield batch

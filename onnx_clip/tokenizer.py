@@ -1,7 +1,7 @@
 import gzip
 import html
 import os
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Union, Iterable
 
 import ftfy
 import numpy as np
@@ -178,7 +178,7 @@ class Tokenizer(object):
 
     def encode_text(
         self,
-        texts: Union[str, List[str]],
+        texts: Union[str, Iterable[str]],
         context_length: int = 77,
         truncate: bool = False,
     ) -> np.array:
