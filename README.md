@@ -2,6 +2,7 @@
 
 An [ONNX](https://onnx.ai/)-based implementation of [CLIP](https://github.com/openai/CLIP) that doesn't
 depend on `torch` or `torchvision`.
+It also has a friendlier API than the original implementation. 
 
 This works by
 - running the text and vision encoders (the ViT-B/32 variant) in [ONNX Runtime](https://onnxruntime.ai/)
@@ -26,7 +27,9 @@ from PIL import Image
 images = [Image.open("onnx_clip/data/franz-kafka.jpg").convert("RGB")]
 texts = ["a photo of a man", "a photo of a woman"]
 
-onnx_model = OnnxClip()
+# Your images/texts will get split into batches of this size before being
+# passed to CLIP, to limit memory usage
+onnx_model = OnnxClip(batch_size=16)
 
 # Unlike the original CLIP, there is no need to run tokenization/preprocessing
 # separately - simply run get_image_embeddings directly on PIL images/NumPy
