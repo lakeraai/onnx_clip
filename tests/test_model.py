@@ -76,7 +76,7 @@ def test_image_model_runs():
     onnx_model = OnnxClip()
     embeddings = onnx_model.get_image_embeddings(n_images * [image])
 
-    assert embeddings.shape == (n_images, 512)
+    assert embeddings.shape == (n_images, OnnxClip.EMBEDDING_SIZE)
 
     # See create_ground_truth_data.py
     expected_image_embeddings_sum = 7.557152271270752
@@ -100,7 +100,7 @@ def test_text_model_runs():
     onnx_model = OnnxClip()
     embeddings = onnx_model.get_text_embeddings(texts)
 
-    assert embeddings.shape == (len(texts), 512)
+    assert embeddings.shape == (len(texts), OnnxClip.EMBEDDING_SIZE)
 
     # See create_ground_truth_data.py
     expected_text_embeddings_sums = [9.667448043823242, 10.100772857666016]
@@ -145,3 +145,50 @@ def test_model_runs():
     # See create_ground_truth_data.py
     expected_probabilities = [[0.9888209104537964, 0.011179053224623203]]
     assert np.allclose(probas[:1], expected_probabilities, atol=1e-6)
+
+
+def test_batching():
+    """Check that using batching preserves the expected output."""
+    image, (text, *_) = load_image_and_texts()
+
+    onnx_model = OnnxClip(batch_size=2)
+
+    image_embedding = onnx_model.get_image_embeddings([image])[0]
+    text_embedding = onnx_model.get_text_embeddings([text])[0]
+
+    n_items = 5
+    batched_image_embeddings = onnx_model.get_image_embeddings(
+        [image] * n_items
+    )
+    batched_text_embeddings = onnx_model.get_text_embeddings([text] * n_items)
+
+    for batched_embeddings, correct_embedding in [
+        (batched_image_embeddings, image_embedding),
+        (batched_text_embeddings, text_embedding),
+    ]:
+        assert batched_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
+        for embedding in batched_embeddings:
+            assert np.array_equal(embedding, correct_embedding)
+
+
+def test_iterator():
+    image, (text, *_) = load_image_and_texts()
+
+    n_items = 5
+    image_iterator = iter([image] * n_items)
+    text_iterator = iter([text] * n_items)
+
+    onnx_model = OnnxClip(batch_size=2)
+
+    image_embeddings = onnx_model.get_image_embeddings(image_iterator)
+    text_embeddings = onnx_model.get_text_embeddings(text_iterator)
+
+    assert image_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
+    assert text_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
+
+    # We've gone through the whole iterator
+    with pytest.raises(StopIteration):
+        next(image_iterator)
+
+    with pytest.raises(StopIteration):
+        next(text_iterator)
