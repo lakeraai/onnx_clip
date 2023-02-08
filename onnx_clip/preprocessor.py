@@ -110,7 +110,7 @@ class Preprocessor:
                 f"The image should have 2 or 3 dimensions but got "
                 f"{len(img.shape)} dimensions"
             )
-        if (len(img.shape) == 3) and img.shape[2] != 3:
+        if len(img.shape) == 3 and img.shape[2] != 3:
             raise ValueError(
                 f"Expected 3-channel RGB image but got image with "
                 f"{img.shape[2]} channels"
@@ -153,9 +153,18 @@ class Preprocessor:
         if np.isnan(img).any():
             raise ValueError(f"The image contains NaN values.")
 
-        assert np.min(img) >= 0
-        assert np.max(img) <= 1
-        assert np.max(img) <= 1
+        try:
+            # These should never trigger, but let's do a sanity check
+            assert np.min(img) >= 0
+            assert np.max(img) <= 1
+            assert img.dtype == np.float32
+            assert len(img.shape) == 3
+            assert img.shape[2] == 3
+        except AssertionError as e:
+            raise RuntimeError(
+                "Internal preprocessing error. "
+                "The image does not have the expected format."
+            ) from e
 
         return img
 
