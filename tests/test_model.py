@@ -149,8 +149,7 @@ def test_model_runs():
 
 def test_batching():
     """Check that using batching preserves the expected output."""
-    image = Image.open(IMAGE_PATH).convert("RGB")
-    text = "a photo of a man"
+    image, (text, *_) = load_image_and_texts()
 
     onnx_model = OnnxClip(batch_size=2)
 
@@ -173,8 +172,7 @@ def test_batching():
 
 
 def test_iterator():
-    image = Image.open(IMAGE_PATH).convert("RGB")
-    text = "a photo of a man"
+    image, (text, *_) = load_image_and_texts()
 
     n_items = 5
     image_iterator = iter([image] * n_items)

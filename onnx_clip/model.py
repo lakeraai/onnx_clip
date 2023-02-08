@@ -92,19 +92,19 @@ class OnnxClip:
     EMBEDDING_SIZE = 512
 
     def __init__(
-        self, silent_download: bool = False, batch_size: Optional[int] = None
+        self, batch_size: Optional[int] = None, silent_download: bool = False
     ):
         """
         Instantiates the model and required encoding classes.
 
         Args:
-            silent_download: If True, the function won't show a warning in
-                case when the models need to be downloaded from the S3 bucket.
             batch_size: If set, splits the lists in `get_image_embeddings`
                 and `get_text_embeddings` into batches of this size before
                 passing them to the model. The embeddings are then concatenated
                 back together before being returned. This is necessary when
                 passing large amounts of data (perhaps ~100 or more).
+            silent_download: If True, the function won't show a warning in
+                case when the models need to be downloaded from the S3 bucket.
         """
         self.image_model, self.text_model = self._load_models(silent_download)
         self._tokenizer = Tokenizer()
