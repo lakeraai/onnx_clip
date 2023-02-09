@@ -188,6 +188,9 @@ class OnnxClip:
             images = [
                 self._preprocessor.encode_image(image) for image in images
             ]
+            if not images:
+                return self._get_empty_embedding()
+
             batch = np.concatenate(images)
 
             return self.image_model.run(None, {"IMAGE": batch})[0]
@@ -198,6 +201,9 @@ class OnnxClip:
                 embeddings.append(
                     self.get_image_embeddings(batch, with_batching=False)
                 )
+
+            if not embeddings:
+                return self._get_empty_embedding()
 
             return np.concatenate(embeddings)
 
@@ -217,6 +223,9 @@ class OnnxClip:
         """
         if not with_batching or self._batch_size is None:
             text = self._tokenizer.encode_text(texts)
+            if len(text) == 0:
+                return self._get_empty_embedding()
+
             return self.text_model.run(None, {"TEXT": text})[0]
         else:
             embeddings = []
@@ -225,7 +234,13 @@ class OnnxClip:
                     self.get_text_embeddings(batch, with_batching=False)
                 )
 
+            if not embeddings:
+                return self._get_empty_embedding()
+
             return np.concatenate(embeddings)
+
+    def _get_empty_embedding(self):
+        return np.empty((0, OnnxClip.EMBEDDING_SIZE), dtype=np.float32)
 
 
 T = TypeVar("T")
