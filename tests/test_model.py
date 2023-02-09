@@ -192,3 +192,15 @@ def test_iterator():
 
     with pytest.raises(StopIteration):
         next(text_iterator)
+
+
+def test_empty():
+    """Handle empty text and image inputs, both with and without batching"""
+
+    onnx_model = OnnxClip(batch_size=2)
+    assert onnx_model.get_image_embeddings([]).shape == (0, 512)
+    assert onnx_model.get_text_embeddings([]).shape == (0, 512)
+
+    onnx_model = OnnxClip()
+    assert onnx_model.get_image_embeddings([]).shape == (0, 512)
+    assert onnx_model.get_text_embeddings([]).shape == (0, 512)
