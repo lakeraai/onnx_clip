@@ -169,7 +169,7 @@ class OnnxClip:
     def get_image_embeddings(
         self,
         images: Iterable[Union[Image.Image, np.ndarray]],
-        with_batching: bool = False,
+        with_batching: bool = True,
     ) -> np.ndarray:
         """Compute the embeddings for a list of images.
 
