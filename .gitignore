@@ -9,3 +9,6 @@ dist/
 thumbs.db
 .DS_Store
 .idea
+
+# models
+*.onnx
