@@ -204,3 +204,24 @@ def test_empty():
     onnx_model = OnnxClip()
     assert onnx_model.get_image_embeddings([]).shape == (0, 512)
     assert onnx_model.get_text_embeddings([]).shape == (0, 512)
+
+
+def test_get_similarity_scores_broadcasting():
+    embeddings = np.eye(3, 512)  # Rectangular identity matrix
+
+    scores = get_similarity_scores(embeddings, embeddings)
+    assert scores.shape == (3, 3)
+    assert np.allclose(scores, np.eye(3, 3) * 100)
+
+    scores = get_similarity_scores(embeddings[0], embeddings)
+    assert scores.shape == (3,)
+    assert np.allclose(scores, np.array([100, 0, 0]))
+
+    scores = get_similarity_scores(embeddings, embeddings[0])
+    assert scores.shape == (3,)
+    assert np.allclose(scores, np.array([100, 0, 0]))
+
+    scores = get_similarity_scores(embeddings[0], embeddings[0])
+    assert scores.shape == ()
+    assert isinstance(scores, float)  # NumPy float counts here too
+    assert np.allclose(scores, 100)
