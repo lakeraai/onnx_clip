@@ -67,15 +67,32 @@ def get_similarity_scores(
     """Compute pairwise similarity scores between two arrays of embeddings.
 
     For zero-shot classification, these can be used as logits. To do so, call
-    `get_similarity_scores(image_embeddings, text_embeddigs)`.
+    `get_similarity_scores(image_embeddings, text_embeddings)`.
 
     Args:
-        embeddings_1: An array of embeddings of shape (N, D).
-        embeddings_2: An array of embeddings of shape (M, D).
+        embeddings_1: An array of embeddings of shape (N, D) or (D,).
+        embeddings_2: An array of embeddings of shape (M, D) or (D,).
 
     Returns:
-        An array of shape (N, M) with the pairwise similarity scores.
+        An array with the pairwise similarity scores. If both inputs are 2-D,
+            the output will be of shape (N, M). If one input is 1-D, the output
+            will be of shape (N,) or (M,). If both inputs are 1-D, the output
+            will be a scalar.
     """
+    if embeddings_1.ndim == 1:
+        # Convert to 2-D array using x[np.newaxis, :]
+        # and remove the extra dimension at the end.
+        return get_similarity_scores(
+            embeddings_1[np.newaxis, :], embeddings_2
+        )[0]
+
+    if embeddings_2.ndim == 1:
+        # Convert to 2-D array using x[np.newaxis, :]
+        # and remove the extra dimension at the end.
+        return get_similarity_scores(
+            embeddings_1, embeddings_2[np.newaxis, :]
+        )[:, 0]
+
     return cosine_similarity(embeddings_1, embeddings_2) * 100
 
 
