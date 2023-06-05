@@ -11,6 +11,7 @@ IMAGE_PATH = os.path.join(
     "../onnx_clip/data/franz-kafka.jpg",
 )
 
+ALLOWED_MODELS = ["ViT-B/32", "RN50"]
 
 def load_image_and_texts(to_rgba=False):
     """
@@ -26,39 +27,48 @@ def load_image_and_texts(to_rgba=False):
     ]
     return image, texts
 
-
-def test_bad_image_input():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_bad_image_input(model):
     """
     Test that a non-PIL input is bad for an image.
     """
     _, texts = load_image_and_texts()
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
     with pytest.raises(TypeError):
         onnx_model.get_image_embeddings("bad image input")
 
-
-def test_bad_image_channels():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_bad_image_channels(model):
     """
     Test that a 4-channel image raises the appropriate error.
     """
     image, texts = load_image_and_texts(to_rgba=True)
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
     with pytest.raises(ValueError):
         onnx_model.get_image_embeddings([image])
 
-
-def test_bad_text_input():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_bad_text_input(model):
     """
     Test that a non-tokenized input text is bad for model.
     """
     image, _ = load_image_and_texts()
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
     with pytest.raises(TypeError):
         onnx_model.get_text_embeddings([image])
 
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_embedding_size_redundancy(model):
+    """
+    Test that calling EMBEDDING_SIZE returns a 
+    no-longer-supported error.
+    """
+    onnx_model = OnnxClip(model=model)
+    with pytest.raises(RuntimeError):
+        onnx_model.EMBEDDING_SIZE
 
 def test_softmax_values():
     """
@@ -68,57 +78,77 @@ def test_softmax_values():
     logits = np.array([[0, 10, -10]])
     assert all(np.isclose(np.sum(softmax(logits), axis=1), 1))
 
-
-def test_image_model_runs():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_image_model_runs(model):
     image, _ = load_image_and_texts()
     n_images = 3
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
     embeddings = onnx_model.get_image_embeddings(n_images * [image])
 
-    assert embeddings.shape == (n_images, OnnxClip.EMBEDDING_SIZE)
+    assert embeddings.shape == (n_images, onnx_model.embedding_size)
 
     # See create_ground_truth_data.py
-    expected_image_embeddings_sum = 7.557152271270752
-    expected_image_embeddings_part = [
-        -0.07944782078266144,
-        0.22216692566871643,
-        -0.04425959661602974,
-        -0.1021476462483406,
-        0.04593294858932495,
-    ]
+    if model == "ViT-B/32":
+        expected_image_embeddings_sum = 7.557152271270752
+        expected_image_embeddings_part = [
+            -0.07944782078266144,
+            0.22216692566871643,
+            -0.04425959661602974,
+            -0.1021476462483406,
+            0.04593294858932495,
+        ]
+    elif model == "RN50":
+        expected_image_embeddings_part = [
+            -0.05500680208206177, 
+            0.017263656482100487, 
+            0.004518476314842701, 
+            -0.0013883080100640655, 
+            0.01354439090937376,
+        ]
+        expected_image_embeddings_sum = -1.4342610836029053
 
     assert np.allclose(
         embeddings[0, :5], expected_image_embeddings_part, atol=1e-6, rtol=1e-4
     )
     assert np.isclose(embeddings[0].sum(), expected_image_embeddings_sum)
 
-
-def test_text_model_runs():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_text_model_runs(model):
     _, texts = load_image_and_texts()
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
     embeddings = onnx_model.get_text_embeddings(texts)
 
-    assert embeddings.shape == (len(texts), OnnxClip.EMBEDDING_SIZE)
+    assert embeddings.shape == (len(texts), onnx_model.embedding_size)
 
     # See create_ground_truth_data.py
-    expected_text_embeddings_sums = [9.667448043823242, 10.100772857666016]
-    expected_text_embeddings_part = [
-        -0.26425981521606445,
-        0.3245568573474884,
-        -0.022752312943339348,
-        0.20319020748138428,
-        -0.00989810936152935,
-    ]
+    if model == "ViT-B/32":
+        expected_text_embeddings_sums = [9.667448043823242, 10.100772857666016]
+        expected_text_embeddings_part = [
+            -0.26425981521606445,
+            0.3245568573474884,
+            -0.022752312943339348,
+            0.20319020748138428,
+            -0.00989810936152935,
+        ]
+    elif model == "RN50":
+        expected_text_embeddings_sums = [-23.376190185546875, -21.070472717285156]
+        expected_text_embeddings_part = [
+            0.3766278028488159, 
+            0.21154774725437164, 
+            0.08376261591911316, 
+            -0.0009389406186528504, 
+            0.28522634506225586,
+        ]
 
     assert np.allclose(
         embeddings[0, :5], expected_text_embeddings_part, atol=1e-5
     )
     assert np.allclose(embeddings.sum(axis=1), expected_text_embeddings_sums)
 
-
-def test_model_runs():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_model_runs(model):
     """
     Test full process.
     """
@@ -126,7 +156,7 @@ def test_model_runs():
     n_images = 3
     n_text = 2
 
-    onnx_model = OnnxClip()
+    onnx_model = OnnxClip(model=model)
 
     image_embeddings = onnx_model.get_image_embeddings([image] * n_images)
     text_embeddings = onnx_model.get_text_embeddings(texts)
@@ -136,22 +166,24 @@ def test_model_runs():
     assert logits_per_image.shape == (n_images, n_text)
 
     # See create_ground_truth_data.py.
-    expected_logits_per_image = [[27.878917694091797, 23.396446228027344]]
+    if model == "ViT-B/32":
+        expected_logits_per_image = [[27.878917694091797, 23.396446228027344]]
+        expected_probabilities = [[0.9888209104537964, 0.011179053224623203]]
+    elif model == "RN50":
+        expected_logits_per_image = [[20.8167724609375, 17.331161499023438]]
+        expected_probabilities = [[0.9702755808830261, 0.029724428430199623]]
     assert np.allclose(logits_per_image[:1], expected_logits_per_image)
 
     probas = softmax(logits_per_image)
     assert probas.shape == (n_images, n_text)
-
-    # See create_ground_truth_data.py
-    expected_probabilities = [[0.9888209104537964, 0.011179053224623203]]
     assert np.allclose(probas[:1], expected_probabilities, atol=1e-6)
 
-
-def test_batching():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_batching(model):
     """Check that using batching preserves the expected output."""
     image, (text, *_) = load_image_and_texts()
 
-    onnx_model = OnnxClip(batch_size=2)
+    onnx_model = OnnxClip(model=model, batch_size=2)
 
     image_embedding = onnx_model.get_image_embeddings([image])[0]
     text_embedding = onnx_model.get_text_embeddings([text])[0]
@@ -166,25 +198,25 @@ def test_batching():
         (batched_image_embeddings, image_embedding),
         (batched_text_embeddings, text_embedding),
     ]:
-        assert batched_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
+        assert batched_embeddings.shape == (n_items, onnx_model.embedding_size)
         for embedding in batched_embeddings:
             assert np.array_equal(embedding, correct_embedding)
 
-
-def test_iterator():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_iterator(model):
     image, (text, *_) = load_image_and_texts()
 
     n_items = 5
     image_iterator = iter([image] * n_items)
     text_iterator = iter([text] * n_items)
 
-    onnx_model = OnnxClip(batch_size=2)
+    onnx_model = OnnxClip(model=model, batch_size=2)
 
     image_embeddings = onnx_model.get_image_embeddings(image_iterator)
     text_embeddings = onnx_model.get_text_embeddings(text_iterator)
 
-    assert image_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
-    assert text_embeddings.shape == (n_items, OnnxClip.EMBEDDING_SIZE)
+    assert image_embeddings.shape == (n_items, onnx_model.embedding_size)
+    assert text_embeddings.shape == (n_items, onnx_model.embedding_size)
 
     # We've gone through the whole iterator
     with pytest.raises(StopIteration):
@@ -193,17 +225,17 @@ def test_iterator():
     with pytest.raises(StopIteration):
         next(text_iterator)
 
-
-def test_empty():
+@pytest.mark.parametrize("model", ALLOWED_MODELS)
+def test_empty(model):
     """Handle empty text and image inputs, both with and without batching"""
 
-    onnx_model = OnnxClip(batch_size=2)
-    assert onnx_model.get_image_embeddings([]).shape == (0, 512)
-    assert onnx_model.get_text_embeddings([]).shape == (0, 512)
+    onnx_model = OnnxClip(model=model, batch_size=2)
+    assert onnx_model.get_image_embeddings([]).shape == (0, onnx_model.embedding_size)
+    assert onnx_model.get_text_embeddings([]).shape == (0, onnx_model.embedding_size)
 
-    onnx_model = OnnxClip()
-    assert onnx_model.get_image_embeddings([]).shape == (0, 512)
-    assert onnx_model.get_text_embeddings([]).shape == (0, 512)
+    onnx_model = OnnxClip(model=model)
+    assert onnx_model.get_image_embeddings([]).shape == (0, onnx_model.embedding_size)
+    assert onnx_model.get_text_embeddings([]).shape == (0, onnx_model.embedding_size)
 
 
 def test_get_similarity_scores_broadcasting():

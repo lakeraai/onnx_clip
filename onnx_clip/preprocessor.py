@@ -7,7 +7,8 @@ from PIL import Image
 
 class Preprocessor:
     """
-    A rough approximation to the CLIP `preprocess` neural net.
+    Our approach to the CLIP `preprocess` neural net that does not rely on PyTorch.
+    The two approaches fully match.
     """
 
     # Fixed variables that ensure the correct output shapes and values for the `Model` class.

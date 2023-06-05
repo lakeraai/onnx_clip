@@ -105,16 +105,16 @@ class OnnxClip:
     `torch` or `torchvision`.
     """
 
-    # The length of each embedding array
-    EMBEDDING_SIZE = 512
 
     def __init__(
-        self, batch_size: Optional[int] = None, silent_download: bool = False
+        self, model: str = "ViT-B/32", batch_size: Optional[int] = None, silent_download: bool = False
     ):
         """
         Instantiates the model and required encoding classes.
 
         Args:
+            model: The model to utilise. Currently ViT-B/32 and RN50 are
+                allowed.
             batch_size: If set, splits the lists in `get_image_embeddings`
                 and `get_text_embeddings` into batches of this size before
                 passing them to the model. The embeddings are then concatenated
@@ -123,24 +123,43 @@ class OnnxClip:
             silent_download: If True, the function won't show a warning in
                 case when the models need to be downloaded from the S3 bucket.
         """
-        self.image_model, self.text_model = self._load_models(silent_download)
+        allowed_models = ["ViT-B/32", "RN50"]
+        if model not in allowed_models:
+            raise ValueError(f"`model` must be in {allowed_models}. Got {model}.")
+        if model == "ViT-B/32":
+            self.embedding_size = 512
+        elif model == "RN50":
+            self.embedding_size = 1024
+        self.image_model, self.text_model = self._load_models(model, silent_download)
         self._tokenizer = Tokenizer()
         self._preprocessor = Preprocessor()
         self._batch_size = batch_size
+    
+    @property
+    def EMBEDDING_SIZE(self):
+        raise RuntimeError("OnnxModel.EMBEDDING_SIZE is no longer supported, please use the instance attribute: onnx_model.embedding_size")
+
 
     @staticmethod
     def _load_models(
+        model: str,
         silent: bool,
     ) -> Tuple[ort.InferenceSession, ort.InferenceSession]:
         """
-        Grabs the ONNX implementation of CLIP's ViT-B/32 :
+        Grabs the ONNX implementation of CLIP's model :
         https://github.com/openai/CLIP/blob/main/clip/model.py
 
         We have exported it to ONNX to remove the dependency on `torch` and
         `torchvision`.
         """
-        IMAGE_MODEL_FILE = "clip_image_model_vitb32.onnx"
-        TEXT_MODEL_FILE = "clip_text_model_vitb32.onnx"
+        if model == "ViT-B/32":
+            IMAGE_MODEL_FILE = "clip_image_model_vitb32.onnx"
+            TEXT_MODEL_FILE = "clip_text_model_vitb32.onnx"
+        elif model == "RN50":
+            IMAGE_MODEL_FILE = "clip_image_model_rn50.onnx"
+            TEXT_MODEL_FILE = "clip_text_model_rn50.onnx"
+        else:
+            raise ValueError(f"Unexpected model {model}. No `.onnx` file found.")
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
         models = []
@@ -198,7 +217,7 @@ class OnnxClip:
                 in `__init__()`
 
         Returns:
-            An array of embeddings of shape (len(images), 512).
+            An array of embeddings of shape (len(images), embedding_size).
         """
         if not with_batching or self._batch_size is None:
             # Preprocess images
@@ -236,7 +255,7 @@ class OnnxClip:
                 in `__init__()`
 
         Returns:
-            An array of embeddings of shape (len(texts), 512).
+            An array of embeddings of shape (len(texts), embedding_size).
         """
         if not with_batching or self._batch_size is None:
             text = self._tokenizer.encode_text(texts)
@@ -257,7 +276,7 @@ class OnnxClip:
             return np.concatenate(embeddings)
 
     def _get_empty_embedding(self):
-        return np.empty((0, OnnxClip.EMBEDDING_SIZE), dtype=np.float32)
+        return np.empty((0, self.embedding_size), dtype=np.float32)
 
 
 T = TypeVar("T")
