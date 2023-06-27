@@ -25,5 +25,4 @@ onnxruntime = ">=1.4.0"
 pillow = "^8.4.0"
 ftfy = "^6.0.3"
 regex = "*"
-boto3 = "^1.23.10"
 importlib_metadata = ">=4.8"  # Supported by Python 3.6
