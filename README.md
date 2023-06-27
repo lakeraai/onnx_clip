@@ -78,7 +78,7 @@ Then, follow [this guide](https://towardsdatascience.com/how-to-publish-a-python
 tl;dr: go to the [PyPI account page](https://pypi.org/manage/account/), generate an API token
 and put it into the `$PYPI_PASSWORD` environment variable. Then run
 ```shell
-poetry publish --build --username "__token__" --password $PYPI_PASSWORD
+poetry publish --build --username lakera --password $PYPI_PASSWORD
 ```
 
 ## Help
