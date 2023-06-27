@@ -1,14 +1,13 @@
 import errno
 import os
 import logging
+from pathlib import Path
 from typing import List, Tuple, Union, Iterable, Iterator, TypeVar, Optional
+import requests
 
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
-import boto3
-from botocore import UNSIGNED
-from botocore.client import Config
 
 from onnx_clip import Preprocessor, Tokenizer
 
@@ -184,19 +183,26 @@ class OnnxClip:
                     path,
                 )
         except Exception:
+            s3_url = f"https://lakera-clip.s3.eu-west-1.amazonaws.com/{os.path.basename(path)}"
             if not silent:
                 logging.info(
                     f"The model file ({path}) doesn't exist "
                     f"or it is invalid. Downloading it from the public S3 "
-                    f"bucket: https://lakera-clip.s3.eu-west-1.amazonaws.com/{os.path.basename(path)}."  # noqa: E501
+                    f"bucket: {s3_url}."  # noqa: E501
                 )
-            # Download from S3
-            s3_client = boto3.client(
-                "s3", config=Config(signature_version=UNSIGNED)
-            )
-            s3_client.download_file(
-                "lakera-clip", os.path.basename(path), path
-            )
+
+            # Download from S3 
+            # Saving to a temporary file first to avoid corrupting the file
+            temporary_filename = Path(path).with_name(os.path.basename(path) + '.part')
+            with requests.get(s3_url, stream=True) as r:
+                r.raise_for_status()
+                with open(temporary_filename, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192): 
+                        f.write(chunk)
+                    f.flush()
+            # Finally move the temporary file to the correct location
+            temporary_filename.rename(path)
+
             # `providers` need to be set explicitly since ORT 1.9
             return ort.InferenceSession(
                 path, providers=ort.get_available_providers()
