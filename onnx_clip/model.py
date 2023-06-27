@@ -194,6 +194,10 @@ class OnnxClip:
             # Download from S3 
             # Saving to a temporary file first to avoid corrupting the file
             temporary_filename = Path(path).with_name(os.path.basename(path) + '.part')
+            
+            # Create any missing directories in the path
+            temporary_filename.parent.mkdir(parents=True, exist_ok=True)
+
             with requests.get(s3_url, stream=True) as r:
                 r.raise_for_status()
                 with open(temporary_filename, 'wb') as f:
