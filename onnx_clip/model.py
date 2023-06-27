@@ -1,6 +1,7 @@
 import errno
 import os
 import logging
+from pathlib import Path
 from typing import List, Tuple, Union, Iterable, Iterator, TypeVar, Optional
 import requests
 
@@ -192,7 +193,7 @@ class OnnxClip:
 
             # Download from S3 
             # Saving to a temporary file first to avoid corrupting the file
-            temporary_filename = path.with_name(os.path.basename(path) + '.part')
+            temporary_filename = Path(path).with_name(os.path.basename(path) + '.part')
             with requests.get(s3_url, stream=True) as r:
                 r.raise_for_status()
                 with open(temporary_filename, 'wb') as f:
