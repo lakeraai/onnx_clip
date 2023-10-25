@@ -12,3 +12,5 @@ thumbs.db
 
 # models
 *.onnx
+
+model/
