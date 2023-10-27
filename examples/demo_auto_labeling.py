@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# Time       : 2023/10/24 5:39
-# Author     : QIN2DIM
-# GitHub     : https://github.com/QIN2DIM
-# Description:
 from __future__ import annotations
 
 import logging
