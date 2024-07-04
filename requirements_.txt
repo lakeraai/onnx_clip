@@ -1,0 +1,15 @@
+# todo: merge to pyproject.toml
+# fixme: python3.10
+
+# todo: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+torchvision>=0.16.0+cu118
+torch>=2.0.1+cu118
+
+# todo: pip install git+https://github.com/openai/CLIP.git@main
+git+https://github.com/openai/CLIP.git@main
+
+# todo: pip install numpy open_clip_torch Pillow onnx
+numpy>=1.24.1
+open_clip_torch>=2.23.0
+Pillow>=9.3.0
+onnx>=1.14.1

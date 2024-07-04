@@ -12,3 +12,6 @@ thumbs.db
 
 # models
 *.onnx
+
+model/
+assets/images/20**
